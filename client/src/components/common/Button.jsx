@@ -15,19 +15,16 @@ export const Button = ({
   ...props
 }) => {
   const baseStyles =
-    "font-medium rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2";
+    "font-medium rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2";
 
   const variantStyles = {
-    primary:
-      "bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800",
-    secondary:
-      "bg-neutral-200 text-neutral-800 hover:bg-neutral-300 active:bg-neutral-400",
-    danger: "bg-error-600 text-white hover:bg-error-700 active:bg-error-800",
-    success:
-      "bg-success-600 text-white hover:bg-success-700 active:bg-success-800",
+    primary: "bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800",
+    secondary: "bg-gray-200 text-gray-800 hover:bg-gray-300 active:bg-gray-400",
+    danger: "bg-red-600 text-white hover:bg-red-700 active:bg-red-800",
+    success: "bg-green-600 text-white hover:bg-green-700 active:bg-green-800",
     outline:
-      "border-2 border-primary-600 text-primary-600 hover:bg-primary-50 active:bg-primary-100",
-    ghost: "text-primary-600 hover:bg-primary-50 active:bg-primary-100",
+      "border-2 border-blue-600 text-blue-600 hover:bg-blue-50 active:bg-blue-100",
+    ghost: "text-blue-600 hover:bg-blue-50 active:bg-blue-100",
   };
 
   const sizeStyles = {

@@ -24,7 +24,7 @@ export const config = {
 
   // Client Configuration
   client: {
-    name: "Smart City Resource Allocation System",
+    name: "Smart City Complaint Management System",
     version: "1.0.0",
     environment: import.meta.env.MODE,
   },
@@ -62,6 +62,13 @@ export const config = {
     OPERATOR: "OPERATOR",
     ADMIN: "ADMIN",
   },
+
+  // Cities (hardcoded MVP)
+  cities: [
+    { value: "PUNE", label: "Pune" },
+    { value: "MUMBAI", label: "Mumbai" },
+    { value: "NAGPUR", label: "Nagpur" },
+  ],
 };
 
 export default config;

@@ -44,8 +44,16 @@ const useAuthStore = create(
             // Verify token is still valid by fetching user profile
             try {
               const response = await authService.getCurrentUser();
+              const userData = {
+                id: response.data.id,
+                name: response.data.name,
+                email: response.data.email,
+                role: response.data.role,
+                profilePhoto: response.data.profile_photo || null,
+                profile_photo: response.data.profile_photo || null,
+              };
               set({
-                user: response.user,
+                user: userData,
                 error: null,
               });
             } catch {
@@ -57,7 +65,7 @@ const useAuthStore = create(
                   const {
                     accessToken: newAccessToken,
                     refreshToken: newRefreshToken,
-                  } = refreshResponse;
+                  } = refreshResponse.data;
 
                   localStorage.setItem(config.auth.tokenKey, newAccessToken);
                   localStorage.setItem(
@@ -98,30 +106,35 @@ const useAuthStore = create(
             passwordConfirm,
           );
 
+          // Extract data from backend response
+          const { data } = response;
+          const userData = {
+            id: data.userId,
+            name: data.name,
+            email: data.email,
+            role: data.role,
+            profilePhoto: data.profilePhoto || null,
+            profile_photo: data.profilePhoto || null,
+          };
+
           set({
-            user: response.user,
-            accessToken: response.accessToken,
-            refreshToken: response.refreshToken,
+            user: userData,
+            accessToken: data.accessToken,
+            refreshToken: data.refreshToken,
             isAuthenticated: true,
             isLoading: false,
             error: null,
           });
 
           // Store in localStorage
-          localStorage.setItem(
-            config.auth.userKey,
-            JSON.stringify(response.user),
-          );
-          localStorage.setItem(config.auth.tokenKey, response.accessToken);
-          localStorage.setItem(
-            config.auth.refreshTokenKey,
-            response.refreshToken,
-          );
+          localStorage.setItem(config.auth.userKey, JSON.stringify(userData));
+          localStorage.setItem(config.auth.tokenKey, data.accessToken);
+          localStorage.setItem(config.auth.refreshTokenKey, data.refreshToken);
 
           return response;
         } catch (error) {
           const errorMessage =
-            error.response?.data?.message || "Registration failed";
+            error.response?.data?.error || "Registration failed";
           set({ error: errorMessage, isLoading: false });
           throw error;
         }
@@ -135,29 +148,73 @@ const useAuthStore = create(
         try {
           const response = await authService.login(email, password);
 
+          // Extract data from backend response
+          const { data } = response;
+          const userData = {
+            id: data.userId,
+            name: data.name,
+            email: data.email,
+            role: data.role,
+            profilePhoto: data.profilePhoto || null,
+            profile_photo: data.profilePhoto || null,
+          };
+
           set({
-            user: response.user,
-            accessToken: response.accessToken,
-            refreshToken: response.refreshToken,
+            user: userData,
+            accessToken: data.accessToken,
+            refreshToken: data.refreshToken,
             isAuthenticated: true,
             isLoading: false,
             error: null,
           });
 
           // Store in localStorage
-          localStorage.setItem(
-            config.auth.userKey,
-            JSON.stringify(response.user),
-          );
-          localStorage.setItem(config.auth.tokenKey, response.accessToken);
-          localStorage.setItem(
-            config.auth.refreshTokenKey,
-            response.refreshToken,
-          );
+          localStorage.setItem(config.auth.userKey, JSON.stringify(userData));
+          localStorage.setItem(config.auth.tokenKey, data.accessToken);
+          localStorage.setItem(config.auth.refreshTokenKey, data.refreshToken);
 
           return response;
         } catch (error) {
-          const errorMessage = error.response?.data?.message || "Login failed";
+          const errorMessage = error.response?.data?.error || "Login failed";
+          set({ error: errorMessage, isLoading: false });
+          throw error;
+        }
+      },
+
+      /**
+       * Login via Google
+       */
+      googleLogin: async (idToken) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await authService.googleLogin(idToken);
+          const { data } = response;
+          const userData = {
+            id: data.userId,
+            name: data.name,
+            email: data.email,
+            role: data.role,
+            profilePhoto: data.profilePhoto || null,
+            profile_photo: data.profilePhoto || null,
+          };
+
+          set({
+            user: userData,
+            accessToken: data.accessToken,
+            refreshToken: data.refreshToken,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
+          });
+
+          localStorage.setItem(config.auth.userKey, JSON.stringify(userData));
+          localStorage.setItem(config.auth.tokenKey, data.accessToken);
+          localStorage.setItem(config.auth.refreshTokenKey, data.refreshToken);
+
+          return response;
+        } catch (error) {
+          const errorMessage =
+            error.response?.data?.error || "Google login failed";
           set({ error: errorMessage, isLoading: false });
           throw error;
         }
@@ -210,8 +267,9 @@ const useAuthStore = create(
 
         try {
           const response = await authService.refreshToken(refreshToken);
+          const { data } = response;
           const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
-            response;
+            data;
 
           set({
             accessToken: newAccessToken,
@@ -246,7 +304,7 @@ const useAuthStore = create(
           return response;
         } catch (error) {
           const errorMessage =
-            error.response?.data?.message || "Password change failed";
+            error.response?.data?.error || "Password change failed";
           set({ error: errorMessage, isLoading: false });
           throw error;
         }

@@ -1,5 +1,7 @@
 # Authentication & Authorization Security Guide
 
+Password123!
+
 > **Complete Backend Implementation for Smart City System**
 
 ---

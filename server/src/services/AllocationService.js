@@ -11,7 +11,66 @@
  */
 
 const db = require("../models");
-const { sequelize } = require("../config/database");
+const sequelize = require("../config/database");
+
+const REQUEST_TO_RESOURCE_CATEGORY = {
+  WATER: ["WATER"],
+  MEDICAL: ["MEDICAL", "OTHER"],
+  FOOD: ["OTHER"],
+  FUEL: ["TRANSPORT", "OTHER"],
+  PARKING: ["TRANSPORT", "OTHER"],
+  EQUIPMENT: ["OTHER"],
+  OTHER: ["OTHER"],
+  ELECTRICITY: ["ELECTRICITY"],
+  TRANSPORT: ["TRANSPORT"],
+};
+
+const isResourceCategoryCompatible = (requestCategory, resourceCategory) => {
+  const allowed = REQUEST_TO_RESOURCE_CATEGORY[requestCategory] || [
+    requestCategory,
+  ];
+  return allowed.includes(resourceCategory);
+};
+
+const REQUEST_SAFE_ATTRIBUTES = [
+  "id",
+  "user_id",
+  "location_id",
+  "resource_category",
+  "quantity_requested",
+  "quantity_fulfilled",
+  "priority",
+  "description",
+  "status",
+  "requested_at",
+  "approved_at",
+  "fulfilled_at",
+  "rejected_at",
+  "rejection_reason",
+  "target_completion_date",
+  "metadata",
+  "createdAt",
+  "updatedAt",
+];
+
+const isMissingProviderServiceColumnError = (error) =>
+  String(error?.message || "")
+    .toLowerCase()
+    .includes("provider_service_id");
+
+const findRequestByPkSafe = async (requestId, extraOptions = {}) => {
+  try {
+    return await db.Request.findByPk(requestId, extraOptions);
+  } catch (error) {
+    if (!isMissingProviderServiceColumnError(error)) {
+      throw error;
+    }
+    return await db.Request.findByPk(requestId, {
+      ...extraOptions,
+      attributes: REQUEST_SAFE_ATTRIBUTES,
+    });
+  }
+};
 
 /**
  * Calculate distance between two geographic points (Haversine formula)
@@ -84,10 +143,18 @@ const findBestResource = async (request) => {
       };
     }
 
-    // Get all active resources in the same category
+    // Map request categories to resource categories for compatibility.
+    const targetCategories =
+      REQUEST_TO_RESOURCE_CATEGORY[request.resource_category] || [
+        request.resource_category,
+      ];
+
+    // Get all active resources in compatible categories
     const availableResources = await db.Resource.findAll({
       where: {
-        category: request.resource_category,
+        category: {
+          [db.sequelize.Sequelize.Op.in]: targetCategories,
+        },
         status: "ACTIVE",
         // Must have at least the required quantity available
         quantity_available: {
@@ -103,7 +170,7 @@ const findBestResource = async (request) => {
     if (availableResources.length === 0) {
       return {
         success: false,
-        reason: "No active resources available in this category",
+        reason: `No active resources available for category ${request.resource_category}`,
       };
     }
 
@@ -341,7 +408,7 @@ const autoAllocateRequest = async (request) => {
  */
 const manuallyAllocateResource = async (requestId, resourceId, operatorId) => {
   try {
-    const request = await db.Request.findByPk(requestId);
+    const request = await findRequestByPkSafe(requestId);
     if (!request) {
       return { success: false, error: "Request not found" };
     }
@@ -355,7 +422,9 @@ const manuallyAllocateResource = async (requestId, resourceId, operatorId) => {
       return { success: false, error: "Resource not found" };
     }
 
-    if (resource.category !== request.resource_category) {
+    if (
+      !isResourceCategoryCompatible(request.resource_category, resource.category)
+    ) {
       return {
         success: false,
         error: "Resource category does not match request",
@@ -417,7 +486,7 @@ const cancelAllocation = async (allocationId, reason = null) => {
     await allocation.save({ transaction });
 
     // Revert request to PENDING
-    const request = await db.Request.findByPk(allocation.request_id, {
+    const request = await findRequestByPkSafe(allocation.request_id, {
       transaction,
     });
     request.status = "PENDING";
@@ -488,7 +557,7 @@ const markAllocationDelivered = async (allocationId) => {
     await allocation.save({ transaction });
 
     // Update request
-    const request = await db.Request.findByPk(allocation.request_id, {
+    const request = await findRequestByPkSafe(allocation.request_id, {
       transaction,
     });
     request.status = "FULFILLED";

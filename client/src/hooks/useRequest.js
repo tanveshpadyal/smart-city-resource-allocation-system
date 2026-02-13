@@ -15,11 +15,24 @@ export const useRequest = () => {
     setLoading(true);
     setError(null);
     try {
+      console.log(
+        "[useRequest.createRequest] Calling API with data:",
+        requestData,
+      );
       const response = await requestService.createRequest(requestData);
+      console.log("[useRequest.createRequest] Success response:", response);
       return response;
     } catch (err) {
+      console.error("[useRequest.createRequest] Error:", err);
+      console.error(
+        "[useRequest.createRequest] Error response data:",
+        err.response?.data,
+      );
       const errorMessage =
-        err.response?.data?.message || "Failed to create request";
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Failed to create request";
+      console.log("[useRequest.createRequest] Setting error:", errorMessage);
       setError(errorMessage);
       throw err;
     } finally {
@@ -32,7 +45,7 @@ export const useRequest = () => {
     setError(null);
     try {
       const response = await requestService.getMyRequests(filters);
-      setRequests(response.requests || response);
+      setRequests(response.data || response);
       return response;
     } catch (err) {
       const errorMessage =
@@ -49,11 +62,51 @@ export const useRequest = () => {
     setError(null);
     try {
       const response = await requestService.getPendingRequests(filters);
-      setRequests(response.requests || response);
+      setRequests(response.data || response);
       return response;
     } catch (err) {
       const errorMessage =
-        err.response?.data?.message || "Failed to fetch pending requests";
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Failed to fetch pending requests";
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const getAssignedComplaints = useCallback(async (filters = {}) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await requestService.getAssignedComplaints(filters);
+      setRequests(response.data || response);
+      return response;
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Failed to fetch assigned complaints";
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const getOperatorComplaints = useCallback(async (filters = {}) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await requestService.getOperatorComplaints(filters);
+      setRequests(response.data || response);
+      return response;
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Failed to fetch operator complaints";
       setError(errorMessage);
       throw err;
     } finally {
@@ -112,6 +165,121 @@ export const useRequest = () => {
     }
   }, []);
 
+  const getAllRequests = useCallback(async (filters = {}) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await requestService.getAllRequests(filters);
+      setRequests(response.data || response);
+      return response;
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.message || "Failed to fetch all requests";
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const startComplaint = useCallback(async (requestId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await requestService.startComplaint(requestId);
+      return response;
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Failed to start complaint";
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const resolveComplaint = useCallback(async (requestId, note, image) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await requestService.resolveComplaint(
+        requestId,
+        note,
+        image,
+      );
+      return response;
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Failed to resolve complaint";
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const updateComplaintStatus = useCallback(async (requestId, status) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await requestService.updateComplaintStatus(
+        requestId,
+        status,
+      );
+      return response;
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Failed to update complaint status";
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const getAdminPendingComplaints = useCallback(async (filters = {}) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await requestService.getAdminPendingComplaints(filters);
+      setRequests(response.data || response);
+      return response;
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Failed to fetch pending complaints";
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const assignComplaint = useCallback(async (requestId, operatorId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await requestService.assignComplaint(requestId, operatorId);
+      return response;
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Failed to assign complaint";
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     // State
     requests,
@@ -122,9 +290,17 @@ export const useRequest = () => {
     createRequest,
     getMyRequests,
     getPendingRequests,
+    getAssignedComplaints,
+    getOperatorComplaints,
     getRequest,
+    startComplaint,
+    resolveComplaint,
+    updateComplaintStatus,
     updateRequest,
     cancelRequest,
+    getAllRequests,
+    getAdminPendingComplaints,
+    assignComplaint,
   };
 };
 

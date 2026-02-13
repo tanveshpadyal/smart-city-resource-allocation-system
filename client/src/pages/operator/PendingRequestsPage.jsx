@@ -3,6 +3,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { OperatorLayout } from "../../components/layouts/OperatorLayout";
 import { InlineSpinner } from "../../components/common/Spinner";
 import { ErrorAlert, SuccessAlert } from "../../components/common/Alert";
@@ -11,9 +12,23 @@ import useRequest from "../../hooks/useRequest";
 import useAllocation from "../../hooks/useAllocation";
 
 export const PendingRequestsPage = () => {
-  const { requests, loading, error, getPendingRequests } = useRequest();
-  const { autoAllocate } = useAllocation();
+  const navigate = useNavigate();
+  const {
+    requests,
+    loading: reqLoading,
+    error: reqError,
+    getPendingRequests,
+  } = useRequest();
+  const {
+    autoAllocate,
+    manualAllocate,
+    suggestResources,
+    loading: allocLoading,
+    error: allocError,
+  } = useAllocation();
   const [successMessage, setSuccessMessage] = useState("");
+  const loading = reqLoading || allocLoading;
+  const error = reqError || allocError;
 
   const loadRequests = useCallback(async () => {
     try {
@@ -33,6 +48,42 @@ export const PendingRequestsPage = () => {
       setSuccessMessage("Auto-allocation triggered successfully!");
       setTimeout(() => setSuccessMessage(""), 5000);
       loadRequests();
+    } catch {
+      // Error handled by hook
+    }
+  };
+
+  const handleManualAllocate = async (requestId) => {
+    try {
+      const suggestionRes = await suggestResources(requestId);
+      const suggestions =
+        suggestionRes?.data?.suggestions ||
+        suggestionRes?.data?.data?.suggestions ||
+        suggestionRes?.suggestions ||
+        [];
+
+      if (!suggestions.length) {
+        setSuccessMessage("No suggested resources available for manual allocation.");
+        setTimeout(() => setSuccessMessage(""), 4000);
+        return;
+      }
+
+      const defaultResourceId =
+        suggestions.find((s) => s.is_best_match)?.resource_id ||
+        suggestions[0]?.resource_id;
+
+      const resourceId = window.prompt(
+        "Enter Resource ID for manual allocation",
+        defaultResourceId,
+      );
+
+      if (!resourceId) return;
+
+      await manualAllocate(requestId, resourceId.trim());
+      setSuccessMessage("Manual allocation completed successfully!");
+      setTimeout(() => setSuccessMessage(""), 5000);
+      loadRequests();
+      navigate("/operator/dashboard");
     } catch {
       // Error handled by hook
     }
@@ -102,10 +153,16 @@ export const PendingRequestsPage = () => {
                         onClick={() => handleAutoAllocate(request.id)}
                         variant="primary"
                         size="sm"
+                        loading={loading}
                       >
                         Auto Allocate
                       </Button>
-                      <Button variant="secondary" size="sm">
+                      <Button
+                        onClick={() => handleManualAllocate(request.id)}
+                        variant="secondary"
+                        size="sm"
+                        loading={loading}
+                      >
                         Manual Allocate
                       </Button>
                     </div>

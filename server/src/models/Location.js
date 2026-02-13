@@ -43,7 +43,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       // Geofence boundary (for more accurate distance calculation)
       boundary_polygon: {
-        type: DataTypes.GEOMETRY("POLYGON"),
+        type: DataTypes.JSON,
         allowNull: true,
         comment: "GeoJSON polygon representing zone boundary",
       },

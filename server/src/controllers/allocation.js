@@ -6,6 +6,66 @@
 
 const db = require("../models");
 const AllocationService = require("../services/AllocationService");
+const { Op } = require("sequelize");
+
+const REQUEST_TO_RESOURCE_CATEGORY = {
+  WATER: ["WATER"],
+  MEDICAL: ["MEDICAL", "OTHER"],
+  FOOD: ["OTHER"],
+  FUEL: ["TRANSPORT", "OTHER"],
+  PARKING: ["TRANSPORT", "OTHER"],
+  EQUIPMENT: ["OTHER"],
+  OTHER: ["OTHER"],
+  ELECTRICITY: ["ELECTRICITY"],
+  TRANSPORT: ["TRANSPORT"],
+};
+
+const isResourceCategoryCompatible = (requestCategory, resourceCategory) => {
+  const allowed = REQUEST_TO_RESOURCE_CATEGORY[requestCategory] || [
+    requestCategory,
+  ];
+  return allowed.includes(resourceCategory);
+};
+
+const REQUEST_SAFE_ATTRIBUTES = [
+  "id",
+  "user_id",
+  "location_id",
+  "resource_category",
+  "quantity_requested",
+  "quantity_fulfilled",
+  "priority",
+  "description",
+  "status",
+  "requested_at",
+  "approved_at",
+  "fulfilled_at",
+  "rejected_at",
+  "rejection_reason",
+  "target_completion_date",
+  "metadata",
+  "createdAt",
+  "updatedAt",
+];
+
+const isMissingProviderServiceColumnError = (error) =>
+  String(error?.message || "")
+    .toLowerCase()
+    .includes("provider_service_id");
+
+const findRequestByPkSafe = async (requestId, extraOptions = {}) => {
+  try {
+    return await db.Request.findByPk(requestId, extraOptions);
+  } catch (error) {
+    if (!isMissingProviderServiceColumnError(error)) {
+      throw error;
+    }
+    return await db.Request.findByPk(requestId, {
+      ...extraOptions,
+      attributes: REQUEST_SAFE_ATTRIBUTES,
+    });
+  }
+};
 
 /**
  * MANUAL ALLOCATE
@@ -33,7 +93,7 @@ const manualAllocate = async (req, res) => {
     }
 
     // ========== VERIFY REQUEST EXISTS ==========
-    const request = await db.Request.findByPk(requestId, {
+    const request = await findRequestByPkSafe(requestId, {
       include: [db.Location],
     });
 
@@ -73,7 +133,9 @@ const manualAllocate = async (req, res) => {
     }
 
     // ========== VERIFY CATEGORY MATCH ==========
-    if (resource.category !== request.resource_category) {
+    if (
+      !isResourceCategoryCompatible(request.resource_category, resource.category)
+    ) {
       return res.status(400).json({
         success: false,
         error: `Resource category (${resource.category}) does not match request (${request.resource_category})`,
@@ -134,10 +196,9 @@ const manualAllocate = async (req, res) => {
  */
 const autoAllocate = async (req, res) => {
   try {
-    const operatorId = req.user?.userId;
     const { requestId } = req.params;
 
-    const request = await db.Request.findByPk(requestId);
+    const request = await findRequestByPkSafe(requestId);
 
     if (!request) {
       return res.status(404).json({
@@ -179,7 +240,8 @@ const autoAllocate = async (req, res) => {
     console.error("Error in autoAllocate:", error);
     return res.status(500).json({
       success: false,
-      error: "Auto-allocation failed",
+      error: `Auto-allocation failed: ${error.message}`,
+      details: error.stack,
       code: "AUTO_ALLOCATION_ERROR",
     });
   }
@@ -195,7 +257,7 @@ const suggestResources = async (req, res) => {
     const { requestId } = req.params;
     const { limit = 5 } = req.query;
 
-    const request = await db.Request.findByPk(requestId, {
+    const request = await findRequestByPkSafe(requestId, {
       include: [db.Location],
     });
 
@@ -219,9 +281,14 @@ const suggestResources = async (req, res) => {
     }
 
     // Get multiple candidates sorted by distance
+    const targetCategories =
+      REQUEST_TO_RESOURCE_CATEGORY[request.resource_category] || [
+        request.resource_category,
+      ];
+
     const candidates = await db.Resource.findAll({
       where: {
-        category: request.resource_category,
+        category: { [Op.in]: targetCategories },
         status: "ACTIVE",
         quantity_available: {
           [db.sequelize.Sequelize.Op.gte]: request.quantity_requested,
@@ -242,6 +309,7 @@ const suggestResources = async (req, res) => {
         );
 
         return {
+          resource,
           resource_id: resource.id,
           name: resource.name,
           code: resource.code,
@@ -254,6 +322,7 @@ const suggestResources = async (req, res) => {
         };
       })
       .filter((s) => s.distance_km <= s.resource.max_distance_km)
+      .map(({ resource, ...rest }) => rest)
       .sort((a, b) => a.distance_km - b.distance_km)
       .slice(0, parseInt(limit));
 
@@ -472,34 +541,59 @@ const markDelivered = async (req, res) => {
 const getAllocations = async (req, res) => {
   try {
     const { status, limit = 50, offset = 0 } = req.query;
+    const allocationOrderColumn = db.ResourceAllocation.rawAttributes.allocated_at
+      ? "allocated_at"
+      : "createdAt";
 
     const where = {};
     if (status) {
       where.status = status;
     }
 
-    const allocations = await db.ResourceAllocation.findAndCountAll({
-      where,
-      include: [
-        {
-          model: db.Request,
-          attributes: ["id", "priority", "resource_category"],
-          include: [
-            {
-              model: db.User,
-              attributes: ["name", "email"],
-            },
-          ],
-        },
-        {
-          model: db.Resource,
-          attributes: ["name", "code", "category"],
-        },
-      ],
-      order: [["allocated_at", "DESC"]],
-      limit: parseInt(limit),
-      offset: parseInt(offset),
-    });
+    let allocations;
+    try {
+      allocations = await db.ResourceAllocation.findAndCountAll({
+        where,
+        include: [
+          {
+            model: db.Request,
+            attributes: ["id", "priority", "resource_category"],
+            include: [
+              {
+                model: db.User,
+                attributes: ["name", "email"],
+              },
+            ],
+          },
+          {
+            model: db.Resource,
+            attributes: ["name", "code", "category"],
+          },
+        ],
+        order: [[allocationOrderColumn, "DESC"]],
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+      });
+    } catch (includeError) {
+      console.error(
+        "getAllocations include query failed, using fallback:",
+        includeError.message,
+      );
+      allocations = await db.ResourceAllocation.findAndCountAll({
+        where,
+        attributes: [
+          "id",
+          "request_id",
+          "resource_id",
+          "status",
+          "allocated_at",
+          "createdAt",
+        ],
+        order: [[allocationOrderColumn, "DESC"]],
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+      });
+    }
 
     return res.status(200).json({
       success: true,
@@ -515,6 +609,7 @@ const getAllocations = async (req, res) => {
     return res.status(500).json({
       success: false,
       error: "Failed to fetch allocations",
+      details: error.message,
       code: "FETCH_ERROR",
     });
   }

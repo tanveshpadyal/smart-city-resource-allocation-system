@@ -1,9 +1,10 @@
 /**
- * Smart City Resource Allocation System - Backend
+ * Smart City Complaint Management System - Backend
  * Main Express Application Setup
  */
 
 const connectDB = require("./config/connectDB");
+const { startSlaCheckScheduler } = require("./services/slaService");
 const path = require("path");
 
 require("dotenv").config({
@@ -16,6 +17,10 @@ const cors = require("cors");
 // Import routes
 const authRoutes = require("./routes/auth");
 const requestRoutes = require("./routes/requests");
+const allocationRoutes = require("./routes/allocations");
+const providerRoutes = require("./routes/providers");
+const adminLogsRoutes = require("./routes/adminLogs");
+const operatorRoutes = require("./routes/operator");
 
 const app = express();
 
@@ -45,8 +50,8 @@ app.use((req, res, next) => {
 // ============================================
 // BODY PARSER MIDDLEWARE
 // ============================================
-app.use(express.json({ limit: "10kb" })); // Limit payload size
-app.use(express.urlencoded({ extended: true, limit: "10kb" }));
+app.use(express.json({ limit: "5mb" })); // Limit payload size
+app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 
 // ============================================
 // REQUEST LOGGING (Optional)
@@ -74,6 +79,11 @@ app.use("/api/auth", authRoutes);
 
 // Request & Allocation routes
 app.use("/api/requests", requestRoutes);
+app.use("/api/allocations", allocationRoutes);
+// Provider & Service routes
+app.use("/api/providers", providerRoutes);
+app.use("/api/admin", adminLogsRoutes);
+app.use("/api/operator", operatorRoutes);
 
 // ============================================
 // 404 HANDLER
@@ -108,6 +118,7 @@ const startServer = async () => {
   try {
     await connectDB();
     console.log("Database connected successfully");
+    startSlaCheckScheduler();
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);

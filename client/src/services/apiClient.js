@@ -6,7 +6,7 @@
 
 import axios from "axios";
 import { config } from "../config";
-import { useAuthStore } from "../store/authStore";
+import useAuthStore from "../store/authStore";
 
 // Create axios instance
 const apiClient = axios.create({
@@ -25,13 +25,20 @@ apiClient.interceptors.request.use(
   (requestConfig) => {
     const token = localStorage.getItem(config.auth.tokenKey);
 
+    console.log("[apiClient] Request to:", requestConfig.url);
+    console.log("[apiClient] Token exists:", !!token);
+
     if (token) {
       requestConfig.headers.Authorization = `Bearer ${token}`;
+      console.log("[apiClient] Token added to headers");
+    } else {
+      console.warn("[apiClient] No token found in localStorage");
     }
 
     return requestConfig;
   },
   (error) => {
+    console.error("[apiClient] Request interceptor error:", error);
     return Promise.reject(error);
   },
 );
@@ -44,9 +51,20 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     const originalRequest = error.config;
+    const requestUrl = originalRequest?.url || "";
+    const isAuthEndpoint = requestUrl.startsWith("/auth/");
+    const statusCode = error.response?.status;
+    const errorCode = error.response?.data?.code;
+    const isTokenExpiredError =
+      statusCode === 401 ||
+      (statusCode === 403 && errorCode === "INVALID_TOKEN");
 
     // Handle 401 (Unauthorized) - Token might be expired
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      isTokenExpiredError &&
+      !originalRequest._retry &&
+      !isAuthEndpoint
+    ) {
       originalRequest._retry = true;
 
       const refreshToken = localStorage.getItem(config.auth.refreshTokenKey);
@@ -81,11 +99,12 @@ apiClient.interceptors.response.use(
         // No refresh token, logout
         useAuthStore.getState().logout();
         window.location.href = config.routes.public.login;
+        return Promise.reject(error);
       }
     }
 
     // Handle 403 (Forbidden) - User doesn't have permission
-    if (error.response?.status === 403) {
+    if (error.response?.status === 403 && !isAuthEndpoint) {
       window.location.href = "/unauthorized";
     }
 

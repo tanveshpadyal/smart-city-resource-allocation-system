@@ -22,7 +22,9 @@ export const useAllocation = () => {
       return response;
     } catch (err) {
       const errorMessage =
-        err.response?.data?.message || "Failed to allocate resource";
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Failed to allocate resource";
       setError(errorMessage);
       throw err;
     } finally {
@@ -38,7 +40,10 @@ export const useAllocation = () => {
       return response;
     } catch (err) {
       const errorMessage =
-        err.response?.data?.message || "Failed to auto-allocate";
+        err.response?.data?.error ||
+        err.response?.data?.details ||
+        err.response?.data?.message ||
+        "Failed to auto-allocate";
       setError(errorMessage);
       throw err;
     } finally {
@@ -54,7 +59,9 @@ export const useAllocation = () => {
       return response;
     } catch (err) {
       const errorMessage =
-        err.response?.data?.message || "Failed to suggest resources";
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Failed to suggest resources";
       setError(errorMessage);
       throw err;
     } finally {
@@ -83,11 +90,13 @@ export const useAllocation = () => {
     setError(null);
     try {
       const response = await allocationService.getAllocations(filters);
-      setAllocations(response.allocations || response);
+      setAllocations(response.data || response.allocations || response || []);
       return response;
     } catch (err) {
       const errorMessage =
-        err.response?.data?.message || "Failed to fetch allocations";
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Failed to fetch allocations";
       setError(errorMessage);
       throw err;
     } finally {

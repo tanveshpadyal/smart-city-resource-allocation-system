@@ -20,23 +20,27 @@ module.exports = (sequelize, DataTypes) => {
       },
       location_id: {
         type: DataTypes.UUID,
-        allowNull: false,
+        allowNull: true,
         comment: "Zone where resource is needed",
       },
+      location_data: {
+        type: DataTypes.JSONB,
+        allowNull: true,
+        comment: "Inline location object for complaint",
+      },
       // Request details
-      resource_category: {
-        type: DataTypes.ENUM(
-          "WATER",
-          "ELECTRICITY",
-          "MEDICAL",
-          "TRANSPORT",
-          "OTHER",
-        ),
+      complaint_category: {
+        type: DataTypes.ENUM("ROAD", "GARBAGE", "WATER", "LIGHT", "OTHER"),
         allowNull: false,
+      },
+      assigned_to: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        comment: "Operator assigned to this complaint",
       },
       quantity_requested: {
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true,
         validate: { min: 1 },
       },
       quantity_fulfilled: {
@@ -56,36 +60,46 @@ module.exports = (sequelize, DataTypes) => {
       },
       // Status tracking
       status: {
-        type: DataTypes.ENUM("PENDING", "APPROVED", "REJECTED", "FULFILLED"),
+        type: DataTypes.ENUM("PENDING", "ASSIGNED", "IN_PROGRESS", "RESOLVED"),
         defaultValue: "PENDING",
+      },
+      // Operator's remark when resolving
+      operator_remark: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        comment: "Operator's notes/remarks about the issue resolution",
       },
       // Timestamps
       requested_at: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
       },
-      approved_at: {
+      assigned_at: {
         type: DataTypes.DATE,
         allowNull: true,
+        comment: "When operator was assigned",
       },
-      fulfilled_at: {
+      started_at: {
         type: DataTypes.DATE,
         allowNull: true,
+        comment: "When operator started working on it",
       },
-      rejected_at: {
+      resolved_at: {
         type: DataTypes.DATE,
         allowNull: true,
+        comment: "When complaint was resolved",
       },
-      // Rejection details
-      rejection_reason: {
-        type: DataTypes.TEXT,
-        allowNull: true,
+      slaBreached: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        comment: "Whether complaint exceeded SLA window before resolution",
       },
       // SLA tracking
-      target_completion_date: {
-        type: DataTypes.DATE,
+      image: {
+        type: DataTypes.TEXT,
         allowNull: true,
-        comment: "Expected completion based on priority",
+        comment: "URL or base64 of complaint image",
       },
       // Metadata
       metadata: {
@@ -98,14 +112,33 @@ module.exports = (sequelize, DataTypes) => {
       indexes: [
         { fields: ["user_id"] },
         { fields: ["location_id"] },
+        { fields: ["location_data"] },
+        { fields: ["assigned_to"] },
         { fields: ["status"] },
-        { fields: ["priority"] },
+        { fields: ["slaBreached"] },
         { fields: ["requested_at"] },
         { fields: ["user_id", "status"] },
-        { fields: ["status", "priority"] },
+        { fields: ["status"] },
       ],
     },
   );
+
+  // Association: Request belongs to assigned operator
+  Request.associate = function (models) {
+    Request.belongsTo(models.User, {
+      foreignKey: "user_id",
+      as: "Citizen",
+    });
+
+    Request.belongsTo(models.User, {
+      foreignKey: "assigned_to",
+      as: "AssignedOperator",
+    });
+
+    Request.belongsTo(models.Location, {
+      foreignKey: "location_id",
+    });
+  };
 
   return Request;
 };

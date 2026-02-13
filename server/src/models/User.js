@@ -40,9 +40,48 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: "CITIZEN",
         allowNull: false,
       },
+      auth_provider: {
+        type: DataTypes.ENUM("local", "google"),
+        allowNull: false,
+        defaultValue: "local",
+      },
+      google_id: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        unique: true,
+      },
+      status: {
+        type: DataTypes.ENUM("active", "suspended"),
+        defaultValue: "active",
+        allowNull: false,
+      },
       is_active: {
         type: DataTypes.BOOLEAN,
         defaultValue: true,
+      },
+      isActive: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+        comment: "Operator availability for auto-assignment",
+      },
+      assignedAreas: {
+        type: DataTypes.ARRAY(DataTypes.STRING),
+        allowNull: false,
+        defaultValue: [],
+        comment: "Areas this operator is responsible for",
+      },
+      profile_photo: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        comment: "Base64/profile image URL for user avatar",
+      },
+      reset_password_token_hash: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      reset_password_expires_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
       },
       last_login: {
         type: DataTypes.DATE,

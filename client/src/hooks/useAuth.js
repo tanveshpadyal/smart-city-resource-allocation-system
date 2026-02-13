@@ -15,6 +15,7 @@ export const useAuth = () => {
     isAuthenticated,
     register,
     login,
+    googleLogin,
     logout,
     refreshAccessToken,
     changePassword,
@@ -36,6 +37,7 @@ export const useAuth = () => {
     // Actions
     register,
     login,
+    googleLogin,
     logout,
     refreshAccessToken,
     changePassword,

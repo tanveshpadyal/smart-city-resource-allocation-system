@@ -2,19 +2,21 @@
  * Login Page
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { MainLayout } from "../components/layouts/MainLayout";
-import { Input, Button } from "../components/common";
-import { ErrorAlert } from "../components/common/Alert";
-import useAuth from "../hooks/useAuth";
-import { validators } from "../utils/validators";
+import { ShieldCheck } from "lucide-react";
+import MainLayout from "../../components/layouts/MainLayout";
+import { Input, Button } from "../../components/common";
+import { ErrorAlert } from "../../components/common/Alert";
+import useAuth from "../../hooks/useAuth";
+import { validators } from "../../utils/validators";
 
 export const LoginPage = () => {
   const navigate = useNavigate();
-  const { login, error, isLoading, clearError } = useAuth();
+  const { login, googleLogin, error, isLoading, clearError } = useAuth();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
+  const [googleReady, setGoogleReady] = useState(false);
 
   const validateForm = () => {
     const newErrors = {};
@@ -34,18 +36,81 @@ export const LoginPage = () => {
 
     try {
       clearError();
-      await login(formData.email, formData.password);
-      navigate("/citizen/dashboard");
+      const response = await login(formData.email, formData.password);
+      const role = response?.data?.role;
+      if (role === "ADMIN") {
+        navigate("/admin/dashboard");
+      } else if (role === "OPERATOR") {
+        navigate("/operator/dashboard");
+      } else {
+        navigate("/citizen/dashboard");
+      }
     } catch {
       // Error handled by store
     }
   };
 
+  useEffect(() => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!clientId) return;
+
+    const renderGoogle = () => {
+      if (!window.google?.accounts?.id) return;
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: async (response) => {
+          try {
+            const loginResponse = await googleLogin(response.credential);
+            const role = loginResponse?.data?.role;
+            if (role === "ADMIN") navigate("/admin/dashboard");
+            else if (role === "OPERATOR") navigate("/operator/dashboard");
+            else navigate("/citizen/dashboard");
+          } catch {
+            // handled by store
+          }
+        },
+      });
+      window.google.accounts.id.renderButton(
+        document.getElementById("google-signin"),
+        {
+          theme: "outline",
+          size: "large",
+          shape: "pill",
+          width: 320,
+          text: "signin_with",
+        },
+      );
+      setGoogleReady(true);
+    };
+
+    if (window.google?.accounts?.id) {
+      renderGoogle();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = renderGoogle;
+    document.body.appendChild(script);
+  }, [googleLogin, navigate]);
+
   return (
     <MainLayout>
-      <div className="mx-auto max-w-md">
-        <div className="rounded-lg border border-neutral-200 bg-white p-8 shadow-sm">
-          <h2 className="text-2xl font-bold text-neutral-900 mb-6">Login</h2>
+      <div className="mx-auto max-w-lg">
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/70">
+          <div className="mb-6 flex items-center gap-3">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
+              <ShieldCheck size={18} />
+            </span>
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900">Welcome Back</h2>
+              <p className="text-sm text-slate-500">
+                Sign in to manage complaints and operations.
+              </p>
+            </div>
+          </div>
 
           {error && <ErrorAlert message={error} onClose={clearError} />}
 
@@ -64,7 +129,7 @@ export const LoginPage = () => {
             <Input
               label="Password"
               type="password"
-              placeholder="••••••••"
+              placeholder="Enter your password"
               value={formData.password}
               onChange={(e) =>
                 setFormData({ ...formData, password: e.target.value })
@@ -72,22 +137,46 @@ export const LoginPage = () => {
               error={errors.password}
               required
             />
+            <div className="text-right">
+              <Link
+                to="/forgot-password"
+                className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+              >
+                Forgot password?
+              </Link>
+            </div>
             <Button
               type="submit"
               variant="primary"
               size="md"
               loading={isLoading}
-              className="w-full"
+              className="w-full bg-gradient-to-r from-indigo-600 to-sky-600 shadow-md shadow-indigo-200 hover:from-indigo-700 hover:to-sky-700"
             >
               Login
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-neutral-600">
+          <div className="my-5 flex items-center gap-3">
+            <div className="h-px flex-1 bg-slate-200" />
+            <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
+              Or
+            </span>
+            <div className="h-px flex-1 bg-slate-200" />
+          </div>
+          <div className="flex justify-center">
+            <div id="google-signin" />
+          </div>
+          {!googleReady && import.meta.env.VITE_GOOGLE_CLIENT_ID && (
+            <p className="mt-3 text-center text-xs text-slate-500">
+              Loading Google Sign-In...
+            </p>
+          )}
+
+          <p className="mt-6 text-center text-sm text-slate-600">
             Don't have an account?{" "}
             <Link
               to="/register"
-              className="text-primary-600 hover:text-primary-700 font-medium"
+              className="font-semibold text-indigo-600 hover:text-indigo-700"
             >
               Register here
             </Link>

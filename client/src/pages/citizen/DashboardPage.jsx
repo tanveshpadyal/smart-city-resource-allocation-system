@@ -51,44 +51,49 @@ export const CitizenDashboardPage = () => {
     <CitizenLayout>
       <div className="space-y-6">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <div className="rounded-lg border border-neutral-200 bg-white p-6">
-            <p className="text-sm text-neutral-600 mb-2">Total Requests</p>
-            <p className="text-3xl font-bold text-primary-600">{stats.total}</p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-slate-800 dark:bg-[#020617]">
+            <p className="mb-2 text-sm text-neutral-600 dark:text-slate-400">Total Requests</p>
+            <p className="text-3xl font-bold text-primary-600 dark:text-indigo-400">{stats.total}</p>
           </div>
-          <div className="rounded-lg border border-neutral-200 bg-white p-6">
-            <p className="text-sm text-neutral-600 mb-2">Pending</p>
-            <p className="text-3xl font-bold text-warning-600">
+          <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-slate-800 dark:bg-[#020617]">
+            <p className="mb-2 text-sm text-neutral-600 dark:text-slate-400">Pending</p>
+            <p className="text-3xl font-bold text-warning-600 dark:text-amber-400">
               {stats.pending}
             </p>
           </div>
-          <div className="rounded-lg border border-neutral-200 bg-white p-6">
-            <p className="text-sm text-neutral-600 mb-2">Fulfilled</p>
-            <p className="text-3xl font-bold text-success-600">
+          <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-slate-800 dark:bg-[#020617]">
+            <p className="mb-2 text-sm text-neutral-600 dark:text-slate-400">Fulfilled</p>
+            <p className="text-3xl font-bold text-success-600 dark:text-emerald-500">
               {stats.fulfilled}
             </p>
           </div>
-          <div className="rounded-lg border border-neutral-200 bg-white p-6">
-            <p className="text-sm text-neutral-600 mb-2">Cancelled</p>
-            <p className="text-3xl font-bold text-error-600">
+          <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-slate-800 dark:bg-[#020617]">
+            <p className="mb-2 text-sm text-neutral-600 dark:text-slate-400">Cancelled</p>
+            <p className="text-3xl font-bold text-error-600 dark:text-rose-500">
               {stats.cancelled}
             </p>
           </div>
         </div>
 
         {/* Quick Actions */}
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row">
           <Link to="/citizen/create-request">
-            <Button variant="primary">Create New Request</Button>
+            <Button variant="primary" className="w-full sm:w-auto">Create New Request</Button>
           </Link>
           <Link to="/citizen/my-requests">
-            <Button variant="secondary">View All Requests</Button>
+            <Button
+              variant="secondary"
+              className="w-full dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 sm:w-auto"
+            >
+              View All Requests
+            </Button>
           </Link>
         </div>
 
         {/* Recent Requests */}
-        <div className="rounded-lg border border-neutral-200 bg-white p-6">
-          <h2 className="text-lg font-bold text-neutral-900 mb-4">
+        <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-slate-800 dark:bg-[#020617]">
+          <h2 className="mb-4 text-lg font-bold text-neutral-900 dark:text-slate-200">
             Recent Requests
           </h2>
           {loading ? (
@@ -96,7 +101,7 @@ export const CitizenDashboardPage = () => {
           ) : error ? (
             <ErrorAlert message={error} onRetry={loadRequests} />
           ) : requests.length === 0 ? (
-            <p className="text-neutral-600">
+            <p className="text-neutral-600 dark:text-slate-400">
               No requests yet. Create your first request to get started!
             </p>
           ) : (
@@ -104,23 +109,23 @@ export const CitizenDashboardPage = () => {
               {requests.slice(0, 5).map((request) => (
                 <div
                   key={request.id}
-                  className="flex items-center justify-between border-b border-neutral-100 pb-3"
+                  className="flex flex-col gap-2 border-b border-neutral-100 pb-3 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800"
                 >
                   <div>
-                    <p className="font-medium text-neutral-900">
+                    <p className="font-medium text-neutral-900 dark:text-slate-200">
                       {request.resource_category}
                     </p>
-                    <p className="text-sm text-neutral-600">
+                    <p className="text-sm text-neutral-600 dark:text-slate-400">
                       Requested {request.requested_quantity} units
                     </p>
                   </div>
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-medium ${
                       request.status === "PENDING"
-                        ? "bg-blue-100 text-blue-800"
+                        ? "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300"
                         : request.status === "FULFILLED"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-gray-100 text-gray-800"
+                          ? "bg-green-100 text-green-800 dark:bg-emerald-500/20 dark:text-emerald-300"
+                          : "bg-gray-100 text-gray-800 dark:bg-slate-800 dark:text-slate-300"
                     }`}
                   >
                     {request.status}

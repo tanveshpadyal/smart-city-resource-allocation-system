@@ -169,15 +169,18 @@ const authRateLimiter = (() => {
       });
     }
 
+    // Rate limit by both IP and email to reduce cross-user collisions.
+    const key = `${req.ip}:${email}`;
+
     const now = Date.now();
-    const userAttempts = attempts.get(email);
+    const userAttempts = attempts.get(key);
 
     // Reset if window has passed
     if (userAttempts && now > userAttempts.resetTime) {
-      attempts.delete(email);
+      attempts.delete(key);
     }
 
-    const current = attempts.get(email) || {
+    const current = attempts.get(key) || {
       count: 0,
       resetTime: now + WINDOW_MS,
     };
@@ -192,8 +195,21 @@ const authRateLimiter = (() => {
       });
     }
 
-    current.count++;
-    attempts.set(email, current);
+    // Count only failed auth attempts. Successful auth clears the counter.
+    res.on("finish", () => {
+      const latest = attempts.get(key) || { count: 0, resetTime: now + WINDOW_MS };
+
+      if (res.statusCode >= 400) {
+        latest.count += 1;
+        // Keep a stable rolling window once tracking has started.
+        if (!latest.resetTime || now > latest.resetTime) {
+          latest.resetTime = now + WINDOW_MS;
+        }
+        attempts.set(key, latest);
+      } else {
+        attempts.delete(key);
+      }
+    });
 
     next();
   };

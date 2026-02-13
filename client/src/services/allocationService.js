@@ -45,7 +45,9 @@ const allocationService = {
    * Get all allocations (operator/admin)
    */
   getAllocations: async (filters = {}) => {
-    const response = await apiClient.get("/allocations", { params: filters });
+    const response = await apiClient.get("/allocations/list", {
+      params: filters,
+    });
     return response.data;
   },
 
@@ -61,7 +63,7 @@ const allocationService = {
    * Mark allocation as in transit
    */
   markInTransit: async (allocationId) => {
-    const response = await apiClient.patch(
+    const response = await apiClient.put(
       `/allocations/${allocationId}/in-transit`,
     );
     return response.data;
@@ -71,7 +73,7 @@ const allocationService = {
    * Mark allocation as delivered
    */
   markDelivered: async (allocationId) => {
-    const response = await apiClient.patch(
+    const response = await apiClient.put(
       `/allocations/${allocationId}/delivered`,
     );
     return response.data;

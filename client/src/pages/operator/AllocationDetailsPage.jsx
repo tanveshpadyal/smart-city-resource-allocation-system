@@ -100,7 +100,7 @@ export const AllocationDetailsPage = () => {
             Allocation #{allocation.id?.slice(0, 8)}
           </h2>
 
-          <div className="grid grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 gap-6 mb-6 md:grid-cols-2">
             <div>
               <p className="text-sm text-neutral-600 mb-1">Resource</p>
               <p className="text-lg font-semibold text-neutral-900">
@@ -158,7 +158,7 @@ export const AllocationDetailsPage = () => {
             <h3 className="font-semibold text-neutral-900 mb-4">
               Request Details
             </h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
                 <p className="text-sm text-neutral-600 mb-1">Requester</p>
                 <p className="font-medium text-neutral-900">

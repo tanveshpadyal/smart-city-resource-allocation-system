@@ -1,0 +1,324 @@
+Database connection failed: Error
+    at Query.run (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\dialects\postgres\query.js:50:25)
+    at C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async PostgresQueryInterface.addIndex (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\dialects\abstract\query-interface.js:250:12)
+    at async Request.sync (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:999:7)
+    at async Sequelize.sync (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\sequelize.js:377:9)
+    at async connectDB (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\src\config\connectDB.js:13:5)
+    at async startServer (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\src\app.js:116:5) {
+  name: 'SequelizeDatabaseError',
+  parent: error: column "location_data" does not exist
+      at parseErrorMessage (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\pg-protocol\dist\parser.js:305:11)
+      at Parser.handlePacket (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\pg-protocol\dist\parser.js:143:27)
+      at Parser.parse (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\pg-protocol\dist\parser.js:37:38)
+      at Socket.<anonymous> (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\pg-protocol\dist\index.js:11:42)
+      at Socket.emit (node:events:524:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    length: 103,
+    severity: 'ERROR',
+    code: '42703',
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: 'indexcmds.c',
+    line: '1894',
+    routine: 'ComputeIndexAttrs',
+    sql: 'CREATE INDEX "requests_location_data" ON "Requests" ("location_data")',
+    parameters: undefined
+  },
+  original: error: column "location_data" does not exist
+      at parseErrorMessage (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\pg-protocol\dist\parser.js:305:11)
+      at Parser.handlePacket (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\pg-protocol\dist\parser.js:143:27)
+      at Parser.parse (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\pg-protocol\dist\parser.js:37:38)
+      at Socket.<anonymous> (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\pg-protocol\dist\index.js:11:42)
+      at Socket.emit (node:events:524:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    length: 103,
+    severity: 'ERROR',
+    code: '42703',
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: 'indexcmds.c',
+    line: '1894',
+    routine: 'ComputeIndexAttrs',
+    sql: 'CREATE INDEX "requests_location_data" ON "Requests" ("location_data")',
+    parameters: undefined
+  },
+  sql: 'CREATE INDEX "requests_location_data" ON "Requests" ("location_data")',
+  parameters: {}
+}
+Failed to start server: Error
+    at Query.run (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\dialects\postgres\query.js:50:25)
+    at C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async PostgresQueryInterface.addIndex (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\dialects\abstract\query-interface.js:250:12)
+    at async Request.sync (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:999:7)
+    at async Sequelize.sync (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\sequelize.js:377:9)
+    at async connectDB (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\src\config\connectDB.js:13:5)
+    at async startServer (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\src\app.js:116:5) {
+  name: 'SequelizeDatabaseError',
+  parent: error: column "location_data" does not exist
+      at parseErrorMessage (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\pg-protocol\dist\parser.js:305:11)
+      at Parser.handlePacket (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\pg-protocol\dist\parser.js:143:27)
+      at Parser.parse (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\pg-protocol\dist\parser.js:37:38)
+      at Socket.<anonymous> (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\pg-protocol\dist\index.js:11:42)
+      at Socket.emit (node:events:524:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    length: 103,
+    severity: 'ERROR',
+    code: '42703',
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: 'indexcmds.c',
+    line: '1894',
+    routine: 'ComputeIndexAttrs',
+    sql: 'CREATE INDEX "requests_location_data" ON "Requests" ("location_data")',
+    parameters: undefined
+  },
+  original: error: column "location_data" does not exist
+      at parseErrorMessage (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\pg-protocol\dist\parser.js:305:11)
+      at Parser.handlePacket (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\pg-protocol\dist\parser.js:143:27)
+      at Parser.parse (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\pg-protocol\dist\parser.js:37:38)
+      at Socket.<anonymous> (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\pg-protocol\dist\index.js:11:42)
+      at Socket.emit (node:events:524:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    length: 103,
+    severity: 'ERROR',
+    code: '42703',
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: 'indexcmds.c',
+    line: '1894',
+    routine: 'ComputeIndexAttrs',
+    sql: 'CREATE INDEX "requests_location_data" ON "Requests" ("location_data")',
+    parameters: undefined
+  },
+  sql: 'CREATE INDEX "requests_location_data" ON "Requests" ("location_data")',
+  parameters: {}
+}
+Error in createRequest: Validation error
+Error in createRequest: Validation error
+Error in createRequest: Validation error
+Error in createRequest: Validation error
+Token verification error: jwt expired
+Token verification error: jwt expired
+Token verification error: jwt expired
+Token verification error: jwt expired
+Token verification error: jwt expired
+Token verification error: jwt expired
+Error in getOperatorComplaints: EagerLoadingError [SequelizeEagerLoadingError]: User is associated to Request multiple times. To identify the correct association, you must use the 'as' keyword to specify the alias of the association you want to include.
+    at Request._getIncludedAssociation (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:580:13)
+    at Request._validateIncludedElement (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:502:53)
+    at C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:421:37
+    at Array.map (<anonymous>)
+    at Request._validateIncludedElements (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:417:39)
+    at Request.findAll (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:1124:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async getOperatorComplaints (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\src\controllers\request.js:417:24)
+Error in getOperatorComplaints: EagerLoadingError [SequelizeEagerLoadingError]: User is associated to Request multiple times. To identify the correct association, you must use the 'as' keyword to specify the alias of the association you want to include.
+    at Request._getIncludedAssociation (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:580:13)
+    at Request._validateIncludedElement (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:502:53)
+    at C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:421:37
+    at Array.map (<anonymous>)
+    at Request._validateIncludedElements (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:417:39)
+    at Request.findAll (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:1124:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async getOperatorComplaints (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\src\controllers\request.js:417:24)
+Error in getOperatorComplaints: EagerLoadingError [SequelizeEagerLoadingError]: User is associated to Request multiple times. To identify the correct association, you must use the 'as' keyword to specify the alias of the association you want to include.
+    at Request._getIncludedAssociation (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:580:13)
+    at Request._validateIncludedElement (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:502:53)
+    at C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:421:37
+    at Array.map (<anonymous>)
+    at Request._validateIncludedElements (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:417:39)
+    at Request.findAll (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:1124:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async getOperatorComplaints (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\src\controllers\request.js:417:24)
+Error in getOperatorComplaints: EagerLoadingError [SequelizeEagerLoadingError]: User is associated to Request multiple times. To identify the correct association, you must use the 'as' keyword to specify the alias of the association you want to include.
+    at Request._getIncludedAssociation (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:580:13)
+    at Request._validateIncludedElement (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:502:53)
+    at C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:421:37
+    at Array.map (<anonymous>)
+    at Request._validateIncludedElements (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:417:39)
+    at Request.findAll (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:1124:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async getOperatorComplaints (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\src\controllers\request.js:417:24)
+Error in getOperatorComplaints: EagerLoadingError [SequelizeEagerLoadingError]: User is associated to Request multiple times. To identify the correct association, you must use the 'as' keyword to specify the alias of the association you want to include.
+    at Request._getIncludedAssociation (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:580:13)
+    at Request._validateIncludedElement (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:502:53)
+    at C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:421:37
+    at Array.map (<anonymous>)
+    at Request._validateIncludedElements (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:417:39)
+    at Request.findAll (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:1124:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async getOperatorComplaints (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\src\controllers\request.js:417:24)
+Error in getOperatorComplaints: EagerLoadingError [SequelizeEagerLoadingError]: User is associated to Request multiple times. To identify the correct association, you must use the 'as' keyword to specify the alias of the association you want to include.
+    at Request._getIncludedAssociation (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:580:13)
+    at Request._validateIncludedElement (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:502:53)
+    at C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:421:37
+    at Array.map (<anonymous>)
+    at Request._validateIncludedElements (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:417:39)
+    at Request.findAll (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:1124:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async getOperatorComplaints (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\src\controllers\request.js:417:24)
+Error in getOperatorComplaints: EagerLoadingError [SequelizeEagerLoadingError]: User is associated to Request multiple times. To identify the correct association, you must use the 'as' keyword to specify the alias of the association you want to include.
+    at Request._getIncludedAssociation (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:580:13)
+    at Request._validateIncludedElement (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:502:53)
+    at C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:421:37
+    at Array.map (<anonymous>)
+    at Request._validateIncludedElements (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:417:39)
+    at Request.findAll (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:1124:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async getOperatorComplaints (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\src\controllers\request.js:417:24)
+Error in getOperatorComplaints: EagerLoadingError [SequelizeEagerLoadingError]: User is associated to Request multiple times. To identify the correct association, you must use the 'as' keyword to specify the alias of the association you want to include.
+    at Request._getIncludedAssociation (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:580:13)
+    at Request._validateIncludedElement (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:502:53)
+    at C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:421:37
+    at Array.map (<anonymous>)
+    at Request._validateIncludedElements (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:417:39)
+    at Request.findAll (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:1124:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async getOperatorComplaints (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\src\controllers\request.js:417:24)
+Error in getOperatorComplaints: EagerLoadingError [SequelizeEagerLoadingError]: User is associated to Request multiple times. To identify the correct association, you must use the 'as' keyword to specify the alias of the association you want to include.
+    at Request._getIncludedAssociation (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:580:13)
+    at Request._validateIncludedElement (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:502:53)
+    at C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:421:37
+    at Array.map (<anonymous>)
+    at Request._validateIncludedElements (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:417:39)
+    at Request.findAll (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:1124:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async getOperatorComplaints (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\src\controllers\request.js:417:24)
+Error in getOperatorComplaints: EagerLoadingError [SequelizeEagerLoadingError]: User is associated to Request multiple times. To identify the correct association, you must use the 'as' keyword to specify the alias of the association you want to include.
+    at Request._getIncludedAssociation (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:580:13)
+    at Request._validateIncludedElement (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:502:53)
+    at C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:421:37
+    at Array.map (<anonymous>)
+    at Request._validateIncludedElements (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:417:39)
+    at Request.findAll (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:1124:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async getOperatorComplaints (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\src\controllers\request.js:417:24)
+Error in getOperatorComplaints: EagerLoadingError [SequelizeEagerLoadingError]: User is associated to Request multiple times. To identify the correct association, you must use the 'as' keyword to specify the alias of the association you want to include.
+    at Request._getIncludedAssociation (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:580:13)
+    at Request._validateIncludedElement (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:502:53)
+    at C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:421:37
+    at Array.map (<anonymous>)
+    at Request._validateIncludedElements (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:417:39)
+    at Request.findAll (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:1124:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async getOperatorComplaints (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\src\controllers\request.js:417:24)
+Error in getOperatorComplaints: EagerLoadingError [SequelizeEagerLoadingError]: User is associated to Request multiple times. To identify the correct association, you must use the 'as' keyword to specify the alias of the association you want to include.
+    at Request._getIncludedAssociation (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:580:13)
+    at Request._validateIncludedElement (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:502:53)
+    at C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:421:37
+    at Array.map (<anonymous>)
+    at Request._validateIncludedElements (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:417:39)
+    at Request.findAll (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:1124:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async getOperatorComplaints (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\src\controllers\request.js:417:24)
+getAllocations include query failed, using fallback: column Request.resource_category does not exist
+getAllocations include query failed, using fallback: column Request.resource_category does not exist
+Error in getOperatorComplaints: EagerLoadingError [SequelizeEagerLoadingError]: User is associated to Request multiple times. To identify the correct association, you must use the 'as' keyword to specify the alias of the association you want to include.
+    at Request._getIncludedAssociation (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:580:13)
+    at Request._validateIncludedElement (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:502:53)
+    at C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:421:37
+    at Array.map (<anonymous>)
+    at Request._validateIncludedElements (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:417:39)
+    at Request.findAll (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:1124:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async getOperatorComplaints (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\src\controllers\request.js:417:24)
+Error in getOperatorComplaints: EagerLoadingError [SequelizeEagerLoadingError]: User is associated to Request multiple times. To identify the correct association, you must use the 'as' keyword to specify the alias of the association you want to include.
+    at Request._getIncludedAssociation (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:580:13)
+    at Request._validateIncludedElement (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:502:53)
+    at C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:421:37
+    at Array.map (<anonymous>)
+    at Request._validateIncludedElements (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:417:39)
+    at Request.findAll (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:1124:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async getOperatorComplaints (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\src\controllers\request.js:417:24)
+Token verification error: jwt expired
+Token verification error: jwt expired
+Token verification error: jwt expired
+Token verification error: jwt expired
+Error in getOperatorComplaints: EagerLoadingError [SequelizeEagerLoadingError]: User is associated to Request multiple times. To identify the correct association, you must use the 'as' keyword to specify the alias of the association you want to include.
+    at Request._getIncludedAssociation (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:580:13)
+    at Request._validateIncludedElement (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:502:53)
+    at C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:421:37
+    at Array.map (<anonymous>)
+    at Request._validateIncludedElements (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:417:39)
+    at Request.findAll (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:1124:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async getOperatorComplaints (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\src\controllers\request.js:417:24)
+Error in getOperatorComplaints: EagerLoadingError [SequelizeEagerLoadingError]: User is associated to Request multiple times. To identify the correct association, you must use the 'as' keyword to specify the alias of the association you want to include.
+    at Request._getIncludedAssociation (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:580:13)
+    at Request._validateIncludedElement (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:502:53)
+    at C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:421:37
+    at Array.map (<anonymous>)
+    at Request._validateIncludedElements (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:417:39)
+    at Request.findAll (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:1124:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async getOperatorComplaints (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\src\controllers\request.js:417:24)
+Error in getOperatorComplaints: EagerLoadingError [SequelizeEagerLoadingError]: User is associated to Request multiple times. To identify the correct association, you must use the 'as' keyword to specify the alias of the association you want to include.
+    at Request._getIncludedAssociation (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:580:13)
+    at Request._validateIncludedElement (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:502:53)
+    at C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:421:37
+    at Array.map (<anonymous>)
+    at Request._validateIncludedElements (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:417:39)
+    at Request.findAll (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:1124:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async getOperatorComplaints (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\src\controllers\request.js:417:24)
+Error in getOperatorComplaints: EagerLoadingError [SequelizeEagerLoadingError]: User is associated to Request multiple times. To identify the correct association, you must use the 'as' keyword to specify the alias of the association you want to include.
+    at Request._getIncludedAssociation (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:580:13)
+    at Request._validateIncludedElement (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:502:53)
+    at C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:421:37
+    at Array.map (<anonymous>)
+    at Request._validateIncludedElements (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:417:39)
+    at Request.findAll (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\node_modules\sequelize\lib\model.js:1124:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async getOperatorComplaints (C:\Users\DELL\Desktop\Project\smart-city-resource-allocation-system\server\src\controllers\request.js:417:24)

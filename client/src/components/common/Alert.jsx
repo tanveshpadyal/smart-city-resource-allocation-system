@@ -10,11 +10,11 @@ import { useState, useEffect } from "react";
  */
 export const ErrorAlert = ({ message, onRetry, onClose }) => {
   return (
-    <div className="rounded-lg border border-error-200 bg-error-50 p-4 text-error-800">
+    <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
       <div className="flex items-start">
         <div className="flex-shrink-0">
           <svg
-            className="h-5 w-5 text-error-400"
+            className="h-5 w-5 text-red-400"
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -70,11 +70,11 @@ export const SuccessAlert = ({ message, onClose, autoClose = true }) => {
   if (!isVisible) return null;
 
   return (
-    <div className="rounded-lg border border-success-200 bg-success-50 p-4 text-success-800">
+    <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-green-800">
       <div className="flex items-start">
         <div className="flex-shrink-0">
           <svg
-            className="h-5 w-5 text-success-400"
+            className="h-5 w-5 text-green-400"
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -98,11 +98,11 @@ export const SuccessAlert = ({ message, onClose, autoClose = true }) => {
  */
 export const WarningAlert = ({ message, onClose }) => {
   return (
-    <div className="rounded-lg border border-warning-200 bg-warning-50 p-4 text-warning-800">
+    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-800">
       <div className="flex items-start">
         <div className="flex-shrink-0">
           <svg
-            className="h-5 w-5 text-warning-400"
+            className="h-5 w-5 text-amber-400"
             fill="currentColor"
             viewBox="0 0 20 20"
           >
