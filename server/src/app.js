@@ -27,13 +27,18 @@ const app = express();
 // ============================================
 // SECURITY & CORS MIDDLEWARE
 // ============================================
-app.use(
+/*app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:5173",
     credentials: true, // Allow cookies if using session-based auth
     optionsSuccessStatus: 200,
   }),
 );
+*/
+app.use(cors({
+  origin: "*",
+  credentials: true
+}));
 
 // Security headers
 app.use((req, res, next) => {
