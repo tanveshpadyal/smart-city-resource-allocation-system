@@ -4,27 +4,22 @@ require("dotenv").config({
 
 const { Sequelize } = require("sequelize");
 
-const baseConfig = {
-  dialect: "postgres",
-  logging: false,
-};
+const isRender = !!process.env.DATABASE_URL;
 
-const useSsl =
-  process.env.DB_SSL === "true" || process.env.PGSSLMODE === "require";
-
-if (useSsl) {
-  baseConfig.dialectOptions = {
-    ssl: {
-      require: true,
-      rejectUnauthorized: false,
-    },
-  };
-}
-
-const sequelize = process.env.DATABASE_URL
-  ? new Sequelize(process.env.DATABASE_URL, baseConfig)
+const sequelize = isRender
+  ? new Sequelize(process.env.DATABASE_URL, {
+      dialect: "postgres",
+      logging: false,
+      dialectOptions: {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false,
+        },
+      },
+    })
   : new Sequelize({
-      ...baseConfig,
+      dialect: "postgres",
+      logging: false,
       database: process.env.DB_NAME,
       username: process.env.DB_USER,
       password: String(process.env.DB_PASSWORD || ""),
