@@ -29,6 +29,7 @@ export const useRequest = () => {
         err.response?.data,
       );
       const errorMessage =
+        err.response?.data?.details ||
         err.response?.data?.error ||
         err.response?.data?.message ||
         "Failed to create request";

@@ -103,11 +103,19 @@ const createRequest = async (req, res) => {
         locationPayload.area ||
         locationPayload.address ||
         `Complaint location - ${Date.now()}`;
-      locationRecord = await db.Location.create({
-        zone_name: zoneName,
-        latitude: locationPayload.lat,
-        longitude: locationPayload.lng,
+
+      // Reuse existing zone records to avoid unique constraint failures on zone_name.
+      locationRecord = await db.Location.findOne({
+        where: { zone_name: zoneName },
       });
+
+      if (!locationRecord) {
+        locationRecord = await db.Location.create({
+          zone_name: zoneName,
+          latitude: locationPayload.lat,
+          longitude: locationPayload.lng,
+        });
+      }
     } else if (latitude !== undefined && longitude !== undefined) {
       // Legacy coordinates support
       const zoneName = `Complaint location - ${Date.now()}`;
@@ -172,11 +180,17 @@ const createRequest = async (req, res) => {
       data: complaint.toJSON(),
     });
   } catch (error) {
-    console.error("Error in createRequest:", error.message);
+    const validationDetails = Array.isArray(error?.errors)
+      ? error.errors.map((e) => e.message).join("; ")
+      : null;
+    console.error(
+      "Error in createRequest:",
+      validationDetails || error.message,
+    );
     return res.status(500).json({
       success: false,
       error: "Failed to create complaint",
-      details: error.message,
+      details: validationDetails || error.message,
       code: "REQUEST_ERROR",
     });
   }
