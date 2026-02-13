@@ -3,8 +3,14 @@
  * Centralized configuration for API endpoints, timeouts, etc.
  */
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const DEFAULT_DEV_API_URL = "http://localhost:5000/api";
+const DEFAULT_PROD_API_URL =
+  "https://smart-city-resource-allocation-system-1.onrender.com/api";
+
+const API_BASE_URL = (
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD ? DEFAULT_PROD_API_URL : DEFAULT_DEV_API_URL)
+).replace(/\/+$/, "");
 
 export const config = {
   // API Configuration
