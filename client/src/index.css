@@ -1,10 +1,16 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   --font-ui: "Inter", sans-serif;
-  --font-heading: "Montserrat", sans-serif;
+  --font-heading: "Inter", sans-serif;
+  --radius-card: 16px;
+  --radius-control: 12px;
+  --color-primary: #1e3a8a;
+  --color-accent: #0f766e;
+  --color-bg-light: #f8fafc;
+  --color-bg-dark: #0b1220;
   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
   --duration-fast: 180ms;
   --duration-base: 280ms;
@@ -16,7 +22,7 @@ html {
 
 body {
   font-family: var(--font-ui);
-  background-color: #f8fafc;
+  background-color: var(--color-bg-light);
   color: #0f172a;
 }
 
@@ -53,7 +59,7 @@ textarea {
 }
 
 .dark body {
-  background-color: #0f172a;
+  background-color: var(--color-bg-dark);
   color: #e2e8f0;
 }
 

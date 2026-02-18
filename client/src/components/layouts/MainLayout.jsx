@@ -1,82 +1,70 @@
 /**
- * Main Layout - For public pages (login, register)
+ * Main Layout - For public auth pages
  */
 
-import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { Moon, Sun } from "lucide-react";
+import { useTheme } from "../../context/ThemeContext";
 
 export const MainLayout = ({ children }) => {
   const location = useLocation();
-
-  useEffect(() => {
-    const root = document.documentElement;
-    const hadDark = root.classList.contains("dark");
-    const previousColorScheme = root.style.colorScheme;
-
-    root.classList.remove("dark");
-    root.style.colorScheme = "light";
-
-    return () => {
-      if (hadDark) {
-        root.classList.add("dark");
-        root.style.colorScheme = "dark";
-      } else {
-        root.style.colorScheme = previousColorScheme || "light";
-      }
-    };
-  }, []);
+  const { isDark, toggleTheme } = useTheme();
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-50">
-      <div className="pointer-events-none absolute -top-20 -left-20 h-80 w-80 rounded-full bg-indigo-200/60 blur-3xl" />
-      <div className="pointer-events-none absolute top-1/3 -right-24 h-80 w-80 rounded-full bg-sky-200/60 blur-3xl" />
-
-      {/* Header */}
-      <header className="relative border-b border-slate-200/80 bg-white/90 backdrop-blur">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0b1220]">
+      <header className="border-b border-slate-200/80 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-[#020617]/95">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-8">
           <Link to="/" className="flex items-center gap-2">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-600 to-sky-500 shadow-md shadow-indigo-200" />
-            <span className="text-xl font-bold text-slate-900">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-700 text-sm font-bold text-white">
+              SC
+            </span>
+            <span className="text-lg font-semibold text-slate-900 dark:text-slate-100">
               Smart City CMS
             </span>
           </Link>
-          <nav className="flex w-full gap-2 rounded-xl border border-slate-200 bg-white p-1 shadow-sm sm:w-auto sm:justify-end">
-            <Link
-              to="/login"
-              className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
-                location.pathname === "/login"
-                  ? "bg-indigo-600 text-white shadow-sm shadow-indigo-200"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              }`}
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900"
+              aria-label="Toggle theme"
             >
-              Login
-            </Link>
-            <Link
-              to="/register"
-              className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
-                location.pathname === "/register"
-                  ? "bg-emerald-600 text-white shadow-sm shadow-emerald-200"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              }`}
-            >
-              Register
-            </Link>
-          </nav>
+              {isDark ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+            <nav className="flex gap-2 rounded-xl border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-[#020617]">
+              <Link
+                to="/login"
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                  location.pathname === "/login"
+                    ? "bg-indigo-700 text-white"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900"
+                }`}
+              >
+                Login
+              </Link>
+              <Link
+                to="/register"
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                  location.pathname === "/register"
+                    ? "bg-emerald-700 text-white"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900"
+                }`}
+              >
+                Register
+              </Link>
+            </nav>
+          </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {children}
       </main>
 
-      {/* Footer */}
-      <footer className="relative mt-12 border-t border-slate-200/80 bg-white/90 backdrop-blur">
-        <div className="mx-auto max-w-7xl px-4 py-8 text-center text-sm text-slate-600 sm:px-6 lg:px-8">
-          <p>
-            &copy; 2026 Smart City Complaint Management System. All rights
-            reserved.
-          </p>
+      <footer className="mt-12 border-t border-slate-200/80 bg-white/95 dark:border-slate-800 dark:bg-[#020617]/95">
+        <div className="mx-auto max-w-7xl px-4 py-8 text-center text-sm text-slate-600 dark:text-slate-300 sm:px-6 lg:px-8">
+          &copy; 2026 Smart City Complaint Management System
         </div>
       </footer>
     </div>

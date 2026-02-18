@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { AdminLayout } from "../../components/layouts/AdminLayout";
 import { InlineSpinner } from "../../components/common/Spinner";
-import { ErrorAlert } from "../../components/common/Alert";
+import { ErrorAlert, SuccessAlert } from "../../components/common/Alert";
 import { Button, MetricCard } from "../../components/common";
 import AnalyticsCharts from "../../components/admin/AnalyticsCharts";
 import HeatmapView from "../../components/admin/HeatmapView";
@@ -45,6 +45,16 @@ export const AdminDashboardPage = () => {
   const [locations, setLocations] = useState([]);
   const [locationsLoading, setLocationsLoading] = useState(false);
   const [locationsError, setLocationsError] = useState("");
+  const [cityAreas, setCityAreas] = useState([]);
+  const [areasLoading, setAreasLoading] = useState(false);
+  const [areasError, setAreasError] = useState("");
+  const [areaForm, setAreaForm] = useState({
+    areaName: "",
+    latitude: "",
+    longitude: "",
+  });
+  const [addingArea, setAddingArea] = useState(false);
+  const [areaSuccess, setAreaSuccess] = useState("");
 
   useEffect(() => {
     getAllRequests();
@@ -73,6 +83,27 @@ export const AdminDashboardPage = () => {
     };
 
     loadAnalytics();
+  }, []);
+
+  useEffect(() => {
+    const loadCityAreas = async () => {
+      setAreasLoading(true);
+      setAreasError("");
+      try {
+        const response = await requestService.getAdminAreas();
+        setCityAreas(response?.data || response || []);
+      } catch (err) {
+        const message =
+          err.response?.data?.error ||
+          err.response?.data?.message ||
+          "Failed to load city areas";
+        setAreasError(message);
+      } finally {
+        setAreasLoading(false);
+      }
+    };
+
+    loadCityAreas();
   }, []);
 
   useEffect(() => {
@@ -219,6 +250,37 @@ export const AdminDashboardPage = () => {
     }
   };
 
+  const handleAddArea = async (e) => {
+    e.preventDefault();
+    if (!areaForm.areaName.trim()) {
+      setAreasError("Area name is required");
+      return;
+    }
+
+    setAddingArea(true);
+    setAreasError("");
+    setAreaSuccess("");
+    try {
+      await requestService.createAdminArea({
+        areaName: areaForm.areaName.trim(),
+        latitude: areaForm.latitude ? Number(areaForm.latitude) : undefined,
+        longitude: areaForm.longitude ? Number(areaForm.longitude) : undefined,
+      });
+      setAreaSuccess("City area added successfully.");
+      setAreaForm({ areaName: "", latitude: "", longitude: "" });
+      const areasRes = await requestService.getAdminAreas();
+      setCityAreas(areasRes?.data || areasRes || []);
+    } catch (err) {
+      const message =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Failed to add city area";
+      setAreasError(message);
+    } finally {
+      setAddingArea(false);
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -350,6 +412,88 @@ export const AdminDashboardPage = () => {
           ) : (
             <AdminLocationsMap locations={locations} />
           )}
+        </div>
+
+        {/* City Area Settings */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/70 transition-all duration-200 hover:shadow-lg hover:shadow-slate-300/70 dark:border-slate-800 dark:bg-[#020617] dark:shadow-black/40 dark:hover:shadow-black/55">
+          <div className="mb-4">
+            <h3 className="text-lg font-bold text-neutral-900 dark:text-slate-200">
+              City Areas
+            </h3>
+            <p className="text-sm text-neutral-600 dark:text-slate-400">
+              Add and manage master area names for city operations
+            </p>
+          </div>
+
+          {areaSuccess && (
+            <div className="mb-4">
+              <SuccessAlert message={areaSuccess} onClose={() => setAreaSuccess("")} />
+            </div>
+          )}
+          {areasError && (
+            <div className="mb-4">
+              <ErrorAlert message={areasError} onClose={() => setAreasError("")} />
+            </div>
+          )}
+
+          <form
+            onSubmit={handleAddArea}
+            className="grid grid-cols-1 gap-3 md:grid-cols-4"
+          >
+            <input
+              type="text"
+              placeholder="Area name (e.g. Kharadi)"
+              value={areaForm.areaName}
+              onChange={(e) =>
+                setAreaForm((prev) => ({ ...prev, areaName: e.target.value }))
+              }
+              className="rounded-lg border border-neutral-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+            />
+            <input
+              type="number"
+              step="any"
+              placeholder="Latitude (optional)"
+              value={areaForm.latitude}
+              onChange={(e) =>
+                setAreaForm((prev) => ({ ...prev, latitude: e.target.value }))
+              }
+              className="rounded-lg border border-neutral-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+            />
+            <input
+              type="number"
+              step="any"
+              placeholder="Longitude (optional)"
+              value={areaForm.longitude}
+              onChange={(e) =>
+                setAreaForm((prev) => ({ ...prev, longitude: e.target.value }))
+              }
+              className="rounded-lg border border-neutral-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+            />
+            <Button type="submit" variant="primary" loading={addingArea}>
+              Add Area
+            </Button>
+          </form>
+
+          <div className="mt-4">
+            {areasLoading ? (
+              <InlineSpinner />
+            ) : cityAreas.length === 0 ? (
+              <p className="text-sm text-neutral-600 dark:text-slate-400">
+                No city areas found.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {cityAreas.map((area) => (
+                  <span
+                    key={area.id}
+                    className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  >
+                    {area.zone_name}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Pending Complaints Awaiting Assignment */}

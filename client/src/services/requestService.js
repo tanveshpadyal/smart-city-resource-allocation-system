@@ -207,6 +207,30 @@ const requestService = {
   },
 
   /**
+   * Get area options for complaint forms (all authenticated roles)
+   */
+  getAreaOptions: async () => {
+    const response = await apiClient.get("/requests/areas");
+    return response.data;
+  },
+
+  /**
+   * Get admin city area master list
+   */
+  getAdminAreas: async () => {
+    const response = await apiClient.get("/requests/admin/areas");
+    return response.data;
+  },
+
+  /**
+   * Add a city area
+   */
+  createAdminArea: async (payload) => {
+    const response = await apiClient.post("/requests/admin/areas", payload);
+    return response.data;
+  },
+
+  /**
    * Export complaints as CSV (admin)
    */
   exportComplaints: async (type = "all") => {

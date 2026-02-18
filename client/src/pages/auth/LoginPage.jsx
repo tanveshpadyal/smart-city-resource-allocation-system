@@ -99,14 +99,14 @@ export const LoginPage = () => {
   return (
     <MainLayout>
       <div className="mx-auto max-w-lg">
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/70">
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-lg shadow-slate-200/70 dark:border-slate-800 dark:bg-[#020617] dark:shadow-black/40">
           <div className="mb-6 flex items-center gap-3">
             <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
               <ShieldCheck size={18} />
             </span>
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">Welcome Back</h2>
-              <p className="text-sm text-slate-500">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Welcome Back</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
                 Sign in to manage complaints and operations.
               </p>
             </div>
@@ -150,7 +150,7 @@ export const LoginPage = () => {
               variant="primary"
               size="md"
               loading={isLoading}
-              className="w-full bg-gradient-to-r from-indigo-600 to-sky-600 shadow-md shadow-indigo-200 hover:from-indigo-700 hover:to-sky-700"
+              className="w-full bg-indigo-700 shadow-sm shadow-indigo-300 hover:bg-indigo-800 dark:shadow-indigo-900/40"
             >
               Login
             </Button>

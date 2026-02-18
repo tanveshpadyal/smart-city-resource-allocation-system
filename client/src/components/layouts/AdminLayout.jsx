@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 import { useTheme } from "../../context/ThemeContext";
+import TopUtilityBar from "./TopUtilityBar";
 
 export const AdminLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -194,6 +195,7 @@ export const AdminLayout = ({ children }) => {
         }`}
       >
         <div className="mx-auto w-full max-w-[1400px] px-4 py-5 md:px-6">
+          <TopUtilityBar userLabel={user?.name || "Administrator"} />
           {children}
         </div>
       </main>

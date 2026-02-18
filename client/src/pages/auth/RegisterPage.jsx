@@ -117,14 +117,14 @@ export const RegisterPage = () => {
   return (
     <MainLayout>
       <div className="mx-auto max-w-lg">
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/70">
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-lg shadow-slate-200/70 dark:border-slate-800 dark:bg-[#020617] dark:shadow-black/40">
           <div className="mb-6 flex items-center gap-3">
             <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
               <UserPlus size={18} />
             </span>
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">Create Account</h2>
-              <p className="text-sm text-slate-500">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Create Account</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
                 Register to submit and track city complaints.
               </p>
             </div>
@@ -182,7 +182,7 @@ export const RegisterPage = () => {
               variant="primary"
               size="md"
               loading={isLoading}
-              className="w-full bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-500 text-white shadow-lg shadow-indigo-300/60 hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-600 dark:shadow-indigo-900/50"
+              className="w-full bg-indigo-700 text-white shadow-sm shadow-indigo-300 hover:bg-indigo-800 dark:shadow-indigo-900/40"
             >
               Create Account
             </Button>

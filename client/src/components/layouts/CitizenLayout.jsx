@@ -6,9 +6,10 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
+  ClipboardList,
   ChevronLeft,
   ChevronRight,
-  ClipboardList,
+  House,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 import { useTheme } from "../../context/ThemeContext";
+import TopUtilityBar from "./TopUtilityBar";
 
 export const CitizenLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -189,19 +191,49 @@ export const CitizenLayout = ({ children }) => {
           collapsed ? "lg:pl-20" : "lg:pl-72"
         }`}
       >
-        <div className="mx-auto w-full max-w-[1400px] px-4 py-5 md:px-6">
+        <div className="mx-auto w-full max-w-[1400px] px-4 py-5 pb-24 md:px-6 md:pb-6">
+          <TopUtilityBar userLabel={user?.name || "Citizen"} />
           {children}
         </div>
       </main>
 
-      <button
-        type="button"
-        onClick={() => setSidebarOpen(true)}
-        className="fixed bottom-4 right-4 z-20 inline-flex h-11 w-11 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg transition-transform hover:bg-indigo-700 active:scale-[0.96] dark:bg-indigo-500 dark:hover:bg-indigo-400 lg:hidden"
-        aria-label="Open sidebar"
-      >
-        <Menu size={18} />
-      </button>
+      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 px-3 py-2 backdrop-blur dark:border-slate-800 dark:bg-[#020617]/95 lg:hidden">
+        <div className="grid grid-cols-3 gap-2">
+          <Link
+            to="/citizen/dashboard"
+            className={`flex items-center justify-center gap-1 rounded-lg px-2 py-2 text-xs font-medium ${
+              isActive("/citizen/dashboard")
+                ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300"
+                : "text-slate-600 dark:text-slate-300"
+            }`}
+          >
+            <House size={14} />
+            Home
+          </Link>
+          <Link
+            to="/citizen/create-request"
+            className={`flex items-center justify-center gap-1 rounded-lg px-2 py-2 text-xs font-medium ${
+              isActive("/citizen/create-request")
+                ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300"
+                : "text-slate-600 dark:text-slate-300"
+            }`}
+          >
+            <PlusCircle size={14} />
+            New
+          </Link>
+          <Link
+            to="/citizen/my-requests"
+            className={`flex items-center justify-center gap-1 rounded-lg px-2 py-2 text-xs font-medium ${
+              isActive("/citizen/my-requests")
+                ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300"
+                : "text-slate-600 dark:text-slate-300"
+            }`}
+          >
+            <ClipboardList size={14} />
+            Status
+          </Link>
+        </div>
+      </nav>
     </div>
   );
 };

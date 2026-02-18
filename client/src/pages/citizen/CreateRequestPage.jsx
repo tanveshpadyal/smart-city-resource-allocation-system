@@ -8,6 +8,7 @@ import { CitizenLayout } from "../../components/layouts/CitizenLayout";
 import { Input, Select, Textarea, Button } from "../../components/common";
 import { ErrorAlert, SuccessAlert } from "../../components/common/Alert";
 import useRequest from "../../hooks/useRequest";
+import requestService from "../../services/requestService";
 import { validators } from "../../utils/validators";
 import {
   MapContainer,
@@ -44,6 +45,7 @@ export const CreateRequestPage = () => {
   const { createRequest, loading, error } = useRequest();
   const mapRef = useRef(null);
   const [success, setSuccess] = useState(false);
+  const [availableAreas, setAvailableAreas] = useState([]);
   const [formData, setFormData] = useState({
     complaint_category: "",
     description: "",
@@ -63,15 +65,37 @@ export const CreateRequestPage = () => {
     { value: "LIGHT", label: "Street Light" },
     { value: "OTHER", label: "Other" },
   ];
-  const areas = [
-    "Kothrud",
-    "Warje",
-    "Baner",
-    "Wakad",
-    "Hadapsar",
-    "Shivajinagar",
-    "Katraj",
-  ];
+
+  useEffect(() => {
+    const loadAreas = async () => {
+      try {
+        const response = await requestService.getAreaOptions();
+        const rows = response?.data || response || [];
+
+        if (Array.isArray(rows) && rows.length > 0) {
+          const dynamicAreas = rows
+            .map((item) => item?.zone_name)
+            .filter(Boolean);
+          setAvailableAreas(dynamicAreas);
+          return;
+        }
+      } catch {
+        // Fallback to defaults if area API is unavailable.
+      }
+
+      setAvailableAreas([
+        "Kothrud",
+        "Warje",
+        "Baner",
+        "Wakad",
+        "Hadapsar",
+        "Shivajinagar",
+        "Katraj",
+      ]);
+    };
+
+    loadAreas();
+  }, []);
 
   const MapClickHandler = () => {
     useMapEvents({
@@ -312,7 +336,7 @@ export const CreateRequestPage = () => {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Select
                 label="Area"
-                options={areas.map((area) => ({ value: area, label: area }))}
+                options={availableAreas.map((area) => ({ value: area, label: area }))}
                 value={formData.area}
                 onChange={(e) => handleAreaChange(e.target.value)}
                 id="area"
@@ -445,7 +469,7 @@ export const CreateRequestPage = () => {
                   <img
                     src={formData.image}
                     alt="Preview"
-                    className="h-auto max-w-xs rounded-lg border border-neutral-200 dark:border-slate-700"
+                    className="h-24 w-24 rounded-lg border border-neutral-200 object-cover dark:border-slate-700"
                   />
                 </div>
               )}

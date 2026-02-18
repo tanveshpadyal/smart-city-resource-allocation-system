@@ -38,6 +38,18 @@ router.get(
 );
 
 /**
+ * GET /api/requests/areas
+ * Returns active city areas for complaint form dropdowns
+ * Access: Authenticated users
+ */
+router.get(
+  "/areas",
+  authenticateToken,
+  authorize(["CITIZEN", "OPERATOR", "ADMIN"]),
+  requestController.getAreaOptions,
+);
+
+/**
  * GET /api/requests/:requestId
  * Get specific complaint details
  * Citizen can only view own complaints
@@ -148,6 +160,29 @@ router.get(
   authenticateToken,
   authorize(["ADMIN"]),
   requestController.getAdminLocations,
+);
+
+/**
+ * GET /api/requests/admin/areas
+ * Returns city area master list
+ */
+router.get(
+  "/admin/areas",
+  authenticateToken,
+  authorize(["ADMIN"]),
+  requestController.getAdminAreas,
+);
+
+/**
+ * POST /api/requests/admin/areas
+ * Adds a city area in location master
+ * Body: areaName, latitude (optional), longitude (optional)
+ */
+router.post(
+  "/admin/areas",
+  authenticateToken,
+  authorize(["ADMIN"]),
+  requestController.createAdminArea,
 );
 
 /**

@@ -2,6 +2,8 @@
  * Input Component
  * Form input wrapper with label and error handling
  */
+import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 export const Input = ({
   label,
@@ -15,6 +17,10 @@ export const Input = ({
   className = "",
   ...props
 }) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPasswordField = type === "password";
+  const resolvedType = isPasswordField && showPassword ? "text" : type;
+
   return (
     <div className="w-full">
       {label && (
@@ -23,19 +29,33 @@ export const Input = ({
           {required && <span className="ml-1 text-red-600 dark:text-rose-400">*</span>}
         </label>
       )}
-      <input
-        type={type}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        disabled={disabled}
-        className={`w-full rounded-lg border px-4 py-2 transition-colors ${
-          error
-            ? "border-red-500 bg-red-50 text-red-900 placeholder-red-400 focus:border-red-600 focus:ring-2 focus:ring-red-200 dark:border-rose-500/60 dark:bg-rose-500/10 dark:text-rose-200 dark:placeholder-rose-300 dark:focus:border-rose-400 dark:focus:ring-rose-500/30"
-            : "border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:placeholder-slate-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-500/30"
-        } disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-slate-800 ${className}`}
-        {...props}
-      />
+      <div className="relative">
+        <input
+          type={resolvedType}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          disabled={disabled}
+          className={`w-full rounded-lg border px-4 py-2 transition-colors ${
+            error
+              ? "border-red-500 bg-red-50 text-red-900 placeholder-red-400 focus:border-red-600 focus:ring-2 focus:ring-red-200 dark:border-rose-500/60 dark:bg-rose-500/10 dark:text-rose-200 dark:placeholder-rose-300 dark:focus:border-rose-400 dark:focus:ring-rose-500/30"
+              : "border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:placeholder-slate-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-500/30"
+          } ${
+            isPasswordField ? "pr-11" : ""
+          } disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-slate-800 ${className}`}
+          {...props}
+        />
+        {isPasswordField && (
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute inset-y-0 right-0 inline-flex items-center justify-center px-3 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        )}
+      </div>
       {error && <p className="mt-1 text-sm text-red-600 dark:text-rose-400">{error}</p>}
     </div>
   );

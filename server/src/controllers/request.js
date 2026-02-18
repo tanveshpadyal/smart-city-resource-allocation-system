@@ -1448,6 +1448,137 @@ const getAdminLocations = async (req, res) => {
   }
 };
 
+/**
+ * GET AREA OPTIONS (AUTHENTICATED)
+ * Returns active city area names for complaint forms
+ */
+const getAreaOptions = async (req, res) => {
+  try {
+    const locations = await db.Location.findAll({
+      where: { is_active: true },
+      attributes: ["id", "zone_name", "latitude", "longitude"],
+      order: [["zone_name", "ASC"]],
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: locations,
+    });
+  } catch (error) {
+    console.error("Error in getAreaOptions:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to fetch area options",
+      code: "AREA_OPTIONS_FETCH_ERROR",
+    });
+  }
+};
+
+/**
+ * GET ADMIN AREAS (ADMIN ONLY)
+ * Returns configured city areas from Location master
+ */
+const getAdminAreas = async (req, res) => {
+  try {
+    const locations = await db.Location.findAll({
+      where: { is_active: true },
+      attributes: ["id", "zone_name", "zone_code", "latitude", "longitude"],
+      order: [["zone_name", "ASC"]],
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: locations,
+    });
+  } catch (error) {
+    console.error("Error in getAdminAreas:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to fetch city areas",
+      code: "ADMIN_AREAS_FETCH_ERROR",
+    });
+  }
+};
+
+/**
+ * CREATE ADMIN AREA (ADMIN ONLY)
+ * Adds a new city area to Location master
+ */
+const createAdminArea = async (req, res) => {
+  try {
+    const { areaName, latitude, longitude } = req.body;
+
+    const normalizedName = typeof areaName === "string" ? areaName.trim() : "";
+    if (!normalizedName) {
+      return res.status(400).json({
+        success: false,
+        error: "Area name is required",
+        code: "AREA_NAME_REQUIRED",
+      });
+    }
+
+    const existing = await db.Location.findOne({
+      where: {
+        zone_name: { [Op.iLike]: normalizedName },
+      },
+    });
+
+    if (existing) {
+      return res.status(409).json({
+        success: false,
+        error: "Area already exists",
+        code: "AREA_EXISTS",
+      });
+    }
+
+    const lat =
+      latitude === undefined || latitude === null || latitude === ""
+        ? 18.5204
+        : Number(latitude);
+    const lng =
+      longitude === undefined || longitude === null || longitude === ""
+        ? 73.8567
+        : Number(longitude);
+
+    if (Number.isNaN(lat) || lat < -90 || lat > 90) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid latitude",
+        code: "INVALID_LATITUDE",
+      });
+    }
+
+    if (Number.isNaN(lng) || lng < -180 || lng > 180) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid longitude",
+        code: "INVALID_LONGITUDE",
+      });
+    }
+
+    const area = await db.Location.create({
+      zone_name: normalizedName,
+      zone_code: `AR-${Date.now().toString().slice(-6)}`,
+      latitude: lat,
+      longitude: lng,
+      is_active: true,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "City area added successfully",
+      data: area,
+    });
+  } catch (error) {
+    console.error("Error in createAdminArea:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to add city area",
+      code: "ADMIN_AREA_CREATE_ERROR",
+    });
+  }
+};
+
 // ============ EXPORTS ============
 module.exports = {
   // Citizen operations
@@ -1466,6 +1597,9 @@ module.exports = {
   getOverdueComplaints,
   exportComplaints,
   getAdminLocations,
+  getAreaOptions,
+  getAdminAreas,
+  createAdminArea,
 
   // Operator operations
   getAssignedComplaints,

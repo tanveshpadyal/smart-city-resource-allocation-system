@@ -1,10 +1,11 @@
 import { useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import useAuthStore from "./store/authStore";
 import config from "./config";
 import { RoleGuard } from "./components/ProtectedRoute";
 
 // Pages - Auth
+import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
@@ -177,10 +178,8 @@ function App() {
 
         {/* Error Routes */}
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/*" element={<NotFoundPage />} />
-
-        {/* Redirect root to login */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   );

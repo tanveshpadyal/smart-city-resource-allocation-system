@@ -5,8 +5,7 @@ import {
   CartesianGrid,
   Cell,
   Line,
-  Area,
-  AreaChart,
+  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -91,6 +90,17 @@ export const AnalyticsCharts = ({
     count: 0,
   };
 
+  const dailyTrendData = useMemo(() => {
+    if (!Array.isArray(dailyCounts)) return [];
+    return dailyCounts.map((item, index) => {
+      const prev = dailyCounts[index - 1]?.count ?? item.count ?? 0;
+      const next = dailyCounts[index + 1]?.count ?? item.count ?? 0;
+      const current = item.count ?? 0;
+      const smoothed = Number(((prev + current + next) / 3).toFixed(2));
+      return { ...item, trend: smoothed };
+    });
+  }, [dailyCounts]);
+
   if (loading) {
     return (
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -110,13 +120,7 @@ export const AnalyticsCharts = ({
       >
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={dailyCounts} margin={{ top: 8, right: 8, left: -8, bottom: 6 }}>
-              <defs>
-                <linearGradient id="complaintsGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#6366f1" stopOpacity={0.35} />
-                  <stop offset="100%" stopColor="#6366f1" stopOpacity={0.03} />
-                </linearGradient>
-              </defs>
+            <LineChart data={dailyTrendData} margin={{ top: 8, right: 8, left: -8, bottom: 6 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#33415526" />
               <XAxis
                 dataKey="date"
@@ -131,25 +135,29 @@ export const AnalyticsCharts = ({
                   <ChartTooltip {...props} labelPrefix="Date" valueLabel="Complaints" />
                 )}
               />
-              <Area
+              <Line
                 type="monotone"
                 dataKey="count"
-                stroke="none"
-                fill="url(#complaintsGradient)"
+                name="Complaints"
+                stroke="#1d4ed8"
+                strokeWidth={3}
+                dot={{ r: 3, fill: "#1d4ed8", stroke: "#eff6ff", strokeWidth: 2 }}
+                activeDot={{ r: 5, fill: "#1e3a8a", stroke: "#bfdbfe", strokeWidth: 2 }}
                 isAnimationActive
                 animationDuration={900}
               />
               <Line
                 type="monotone"
-                dataKey="count"
-                stroke="#4f46e5"
-                strokeWidth={3}
-                dot={{ r: 3, fill: "#4f46e5", stroke: "#eef2ff", strokeWidth: 2 }}
-                activeDot={{ r: 5, fill: "#4338ca", stroke: "#c7d2fe", strokeWidth: 2 }}
+                dataKey="trend"
+                name="Trend"
+                stroke="#0f766e"
+                strokeWidth={2}
+                strokeDasharray="6 4"
+                dot={false}
                 isAnimationActive
                 animationDuration={900}
               />
-            </AreaChart>
+            </LineChart>
           </ResponsiveContainer>
         </div>
       </Panel>
