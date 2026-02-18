@@ -2,14 +2,21 @@
  * Create Complaint Page - Citizen
  */
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CitizenLayout } from "../../components/layouts/CitizenLayout";
 import { Input, Select, Textarea, Button } from "../../components/common";
 import { ErrorAlert, SuccessAlert } from "../../components/common/Alert";
 import useRequest from "../../hooks/useRequest";
 import { validators } from "../../utils/validators";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Circle,
+  useMap,
+  useMapEvents,
+} from "react-leaflet";
 import L from "leaflet";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
@@ -22,6 +29,16 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
+const AREA_COORDINATES = {
+  Kothrud: { lat: 18.5074, lng: 73.8077, radius: 1200 },
+  Warje: { lat: 18.4896, lng: 73.7987, radius: 1200 },
+  Baner: { lat: 18.559, lng: 73.7868, radius: 1200 },
+  Wakad: { lat: 18.5975, lng: 73.7898, radius: 1200 },
+  Hadapsar: { lat: 18.4966, lng: 73.9419, radius: 1400 },
+  Shivajinagar: { lat: 18.5308, lng: 73.8475, radius: 1000 },
+  Katraj: { lat: 18.4575, lng: 73.8508, radius: 1200 },
+};
+
 export const CreateRequestPage = () => {
   const navigate = useNavigate();
   const { createRequest, loading, error } = useRequest();
@@ -32,6 +49,7 @@ export const CreateRequestPage = () => {
     description: "",
     area: "",
     address: "",
+    pincode: "",
     lat: "",
     lng: "",
     image: null,
@@ -68,6 +86,18 @@ export const CreateRequestPage = () => {
     return null;
   };
 
+  const MapAreaFocus = ({ areaName }) => {
+    const map = useMap();
+
+    useEffect(() => {
+      if (!areaName || !AREA_COORDINATES[areaName]) return;
+      const { lat, lng } = AREA_COORDINATES[areaName];
+      map.flyTo([lat, lng], 13, { duration: 0.8 });
+    }, [areaName, map]);
+
+    return null;
+  };
+
   const validateForm = () => {
     const newErrors = {};
     if (!formData.complaint_category)
@@ -77,6 +107,8 @@ export const CreateRequestPage = () => {
     if (!formData.area) newErrors.area = "Area is required";
     if (!formData.address || formData.address.trim().length === 0)
       newErrors.address = "Address is required";
+    if (!validators.isValidPincode(formData.pincode))
+      newErrors.pincode = "Pincode must be 6 digits";
     if (!validators.isValidLatitude(formData.lat))
       newErrors.lat = "Invalid latitude (-90 to 90)";
     if (!validators.isValidLongitude(formData.lng))
@@ -91,6 +123,7 @@ export const CreateRequestPage = () => {
       "description",
       "area",
       "address",
+      "pincode",
       "lat",
       "lng",
     ];
@@ -158,6 +191,7 @@ export const CreateRequestPage = () => {
         description: !formData.description || formData.description.trim().length === 0,
         area: !formData.area,
         address: !formData.address || formData.address.trim().length === 0,
+        pincode: !validators.isValidPincode(formData.pincode),
         lat: !validators.isValidLatitude(formData.lat),
         lng: !validators.isValidLongitude(formData.lng),
       });
@@ -184,6 +218,7 @@ export const CreateRequestPage = () => {
         location: {
           area: formData.area,
           address: formData.address,
+          pincode: formData.pincode.trim(),
           lat: parseFloat(formData.lat),
           lng: parseFloat(formData.lng),
         },
@@ -204,6 +239,16 @@ export const CreateRequestPage = () => {
       console.error("[CreateRequest] Full error response:", err.response?.data);
       // Error is already set by the hook
     }
+  };
+
+  const handleAreaChange = (selectedArea) => {
+    const areaCenter = AREA_COORDINATES[selectedArea];
+    setFormData((prev) => ({
+      ...prev,
+      area: selectedArea,
+      lat: areaCenter ? areaCenter.lat.toFixed(6) : prev.lat,
+      lng: areaCenter ? areaCenter.lng.toFixed(6) : prev.lng,
+    }));
   };
 
   if (success) {
@@ -269,12 +314,7 @@ export const CreateRequestPage = () => {
                 label="Area"
                 options={areas.map((area) => ({ value: area, label: area }))}
                 value={formData.area}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    area: e.target.value,
-                  })
-                }
+                onChange={(e) => handleAreaChange(e.target.value)}
                 id="area"
                 error={errors.area}
                 required
@@ -292,6 +332,20 @@ export const CreateRequestPage = () => {
                 id="address"
                 error={errors.address}
                 rows={3}
+                required
+              />
+              <Input
+                label="Pincode"
+                placeholder="e.g. 411038"
+                value={formData.pincode}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    pincode: e.target.value.replace(/\D/g, "").slice(0, 6),
+                  })
+                }
+                id="pincode"
+                error={errors.pincode}
                 required
               />
             </div>
@@ -319,7 +373,23 @@ export const CreateRequestPage = () => {
                     attribution='&copy; OpenStreetMap contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
+                  <MapAreaFocus areaName={formData.area} />
                   <MapClickHandler />
+                  {formData.area && AREA_COORDINATES[formData.area] && (
+                    <Circle
+                      center={[
+                        AREA_COORDINATES[formData.area].lat,
+                        AREA_COORDINATES[formData.area].lng,
+                      ]}
+                      radius={AREA_COORDINATES[formData.area].radius}
+                      pathOptions={{
+                        color: "#4f46e5",
+                        fillColor: "#6366f1",
+                        fillOpacity: 0.18,
+                        weight: 2,
+                      }}
+                    />
+                  )}
                   {validators.isValidLatitude(formData.lat) &&
                     validators.isValidLongitude(formData.lng) && (
                       <Marker

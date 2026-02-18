@@ -4,11 +4,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle } from "lucide-react";
+import {
+  AlertTriangle,
+  BriefcaseBusiness,
+  CheckCircle2,
+  Clock3,
+  FileText,
+  Timer,
+} from "lucide-react";
 import { AdminLayout } from "../../components/layouts/AdminLayout";
 import { InlineSpinner } from "../../components/common/Spinner";
 import { ErrorAlert } from "../../components/common/Alert";
-import { Button } from "../../components/common";
+import { Button, MetricCard } from "../../components/common";
 import AnalyticsCharts from "../../components/admin/AnalyticsCharts";
 import HeatmapView from "../../components/admin/HeatmapView";
 import OperatorPerformance from "../../components/admin/OperatorPerformance";
@@ -236,57 +243,56 @@ export const AdminDashboardPage = () => {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4">
-          <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-md shadow-slate-200/70 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-300/70 dark:border-slate-800 dark:bg-[#020617] dark:shadow-black/40 dark:hover:shadow-black/55">
-            <p className="text-xs text-neutral-600 mb-1 dark:text-slate-400">Total Complaints</p>
-            <p className="text-2xl font-bold text-primary-600 dark:text-indigo-400">
-              {stats.totalComplaints}
-            </p>
-          </div>
-          <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 shadow-md shadow-slate-200/70 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-300/70 dark:border-slate-800 dark:bg-[#02061780] dark:shadow-black/40 dark:hover:shadow-black/55">
-            <p className="text-xs text-neutral-600 mb-1 dark:text-slate-400">Pending</p>
-            <p className="text-2xl font-bold text-orange-600 dark:text-amber-400">
-              {stats.pendingComplaints}
-            </p>
-          </div>
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 shadow-md shadow-slate-200/70 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-300/70 dark:border-slate-800 dark:bg-[#02061780] dark:shadow-black/40 dark:hover:shadow-black/55">
-            <p className="text-xs text-neutral-600 mb-1 dark:text-slate-400">Assigned</p>
-            <p className="text-2xl font-bold text-blue-600 dark:text-indigo-400">
-              {stats.assignedComplaints}
-            </p>
-          </div>
-          <div className="rounded-lg border border-purple-200 bg-purple-50 p-4 shadow-md shadow-slate-200/70 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-300/70 dark:border-slate-800 dark:bg-[#02061780] dark:shadow-black/40 dark:hover:shadow-black/55">
-            <p className="text-xs text-neutral-600 mb-1 dark:text-slate-400">In Progress</p>
-            <p className="text-2xl font-bold text-purple-600 dark:text-amber-400">
-              {stats.inProgressComplaints}
-            </p>
-          </div>
-          <div className="rounded-lg border border-green-200 bg-green-50 p-4 shadow-md shadow-slate-200/70 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-300/70 dark:border-slate-800 dark:bg-[#02061780] dark:shadow-black/40 dark:hover:shadow-black/55">
-            <p className="text-xs text-neutral-600 mb-1 dark:text-slate-400">Resolved</p>
-            <p className="text-2xl font-bold text-green-600 dark:text-emerald-500">
-              {stats.resolvedComplaints}
-            </p>
-          </div>
-          <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-md shadow-slate-200/70 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-300/70 dark:border-slate-800 dark:bg-[#020617] dark:shadow-black/40 dark:hover:shadow-black/55">
-            <p className="text-xs text-neutral-600 mb-1 dark:text-slate-400">Resolution Rate</p>
-            <p className="text-2xl font-bold text-success-600 dark:text-emerald-500">
-              {stats.resolutionRate}%
-            </p>
-          </div>
-          <div className="rounded-lg border border-error-200 bg-error-50 p-4 shadow-md shadow-slate-200/70 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-300/70 dark:border-slate-800 dark:bg-[#02061780] dark:shadow-black/40 dark:hover:shadow-black/55">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="text-xs text-error-700 mb-1 dark:text-rose-300">Overdue</p>
-                <p className="text-2xl font-bold text-error-700 dark:text-rose-500">
-                  {overdueComplaints.length}
-                </p>
-              </div>
-              <AlertTriangle size={18} className="text-error-700 mt-0.5 dark:text-rose-500" />
-            </div>
-            <p className="text-xs text-error-600 mt-1 dark:text-rose-300">
-              &gt; {overdueThreshold}h unresolved
-            </p>
-          </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <MetricCard
+            title="Total Complaints"
+            value={stats.totalComplaints}
+            subtitle="All recorded complaints"
+            icon={FileText}
+            tone="indigo"
+          />
+          <MetricCard
+            title="Pending"
+            value={stats.pendingComplaints}
+            subtitle="Not yet assigned"
+            icon={Clock3}
+            tone="amber"
+          />
+          <MetricCard
+            title="Assigned"
+            value={stats.assignedComplaints}
+            subtitle="Ready for operator action"
+            icon={BriefcaseBusiness}
+            tone="blue"
+          />
+          <MetricCard
+            title="In Progress"
+            value={stats.inProgressComplaints}
+            subtitle="Work currently underway"
+            icon={Timer}
+            tone="amber"
+          />
+          <MetricCard
+            title="Resolved"
+            value={stats.resolvedComplaints}
+            subtitle="Complaints completed"
+            icon={CheckCircle2}
+            tone="emerald"
+          />
+          <MetricCard
+            title="Resolution Rate"
+            value={`${stats.resolutionRate}%`}
+            subtitle="Resolved over total"
+            icon={CheckCircle2}
+            tone="emerald"
+          />
+          <MetricCard
+            title="Overdue"
+            value={overdueComplaints.length}
+            subtitle={`Over ${overdueThreshold}h unresolved`}
+            icon={AlertTriangle}
+            tone="rose"
+          />
         </div>
 
         {/* Charts Section */}
@@ -347,7 +353,7 @@ export const AdminDashboardPage = () => {
         </div>
 
         {/* Pending Complaints Awaiting Assignment */}
-        <div className="rounded-lg border border-neutral-200 bg-white p-6 shadow-md shadow-slate-200/70 transition-all duration-200 hover:shadow-lg hover:shadow-slate-300/70 dark:border-slate-800 dark:bg-[#020617] dark:shadow-black/40 dark:hover:shadow-black/55">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/70 transition-all duration-200 hover:shadow-lg hover:shadow-slate-300/70 dark:border-slate-800 dark:bg-[#020617] dark:shadow-black/40 dark:hover:shadow-black/55">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-neutral-900 dark:text-slate-200">
               Pending Complaints ({stats.pendingComplaints})
@@ -375,7 +381,7 @@ export const AdminDashboardPage = () => {
                 .map((complaint) => (
                   <div
                     key={complaint.id}
-                    className="border border-neutral-100 rounded-lg p-3 shadow-sm shadow-slate-200/60 hover:bg-neutral-50 transition-colors dark:border-slate-800 dark:bg-[#02061780] dark:shadow-black/35 dark:hover:bg-slate-900"
+                    className="rounded-xl border border-slate-200 p-3 shadow-sm shadow-slate-200/60 transition-colors hover:bg-neutral-50 dark:border-slate-800 dark:bg-[#02061780] dark:shadow-black/35 dark:hover:bg-slate-900"
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
@@ -409,7 +415,7 @@ export const AdminDashboardPage = () => {
         </div>
 
         {/* Overdue Complaints */}
-        <div className="rounded-lg border border-error-200 bg-error-50/40 p-6 shadow-md shadow-slate-200/70 transition-all duration-200 hover:shadow-lg hover:shadow-slate-300/70 dark:border-slate-800 dark:bg-[#020617] dark:shadow-black/40 dark:hover:shadow-black/55">
+        <div className="rounded-2xl border border-error-200 bg-error-50/40 p-6 shadow-md shadow-slate-200/70 transition-all duration-200 hover:shadow-lg hover:shadow-slate-300/70 dark:border-slate-800 dark:bg-[#020617] dark:shadow-black/40 dark:hover:shadow-black/55">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-2">
               <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-error-100 text-error-700 dark:bg-rose-500/20 dark:text-rose-500">
@@ -453,7 +459,7 @@ export const AdminDashboardPage = () => {
               {overdueComplaints.slice(0, 8).map((complaint) => (
                 <div
                   key={complaint.id}
-                  className="border border-error-300 rounded-lg p-3 bg-error-50 shadow-sm shadow-slate-200/60 hover:bg-error-100 transition-colors dark:border-rose-500/30 dark:bg-rose-500/10 dark:shadow-black/35 dark:hover:bg-rose-500/20"
+                  className="rounded-xl border border-error-300 bg-error-50 p-3 shadow-sm shadow-slate-200/60 transition-colors hover:bg-error-100 dark:border-rose-500/30 dark:bg-rose-500/10 dark:shadow-black/35 dark:hover:bg-rose-500/20"
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex flex-1 items-start gap-2">

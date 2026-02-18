@@ -84,6 +84,7 @@ const createRequest = async (req, res) => {
       locationPayload = {
         area: location.area || "",
         address: location.address || "",
+        pincode: location.pincode || "",
         lat,
         lng,
       };
@@ -127,6 +128,7 @@ const createRequest = async (req, res) => {
       locationPayload = {
         area: "",
         address: "",
+        pincode: "",
         lat: Number(latitude),
         lng: Number(longitude),
       };
@@ -1223,6 +1225,7 @@ const getComplaintTimeline = async (req, res) => {
             location: {
               area: complaint.location_data?.area || complaint.Location?.zone_name,
               address: complaint.location_data?.address || "",
+              pincode: complaint.location_data?.pincode || "",
               lat:
                 complaint.location_data?.lat ??
                 complaint.Location?.latitude ??
@@ -1340,6 +1343,7 @@ const exportComplaints = async (req, res) => {
       operator_email: complaint.assignedOperator?.email || "",
       location_area: complaint.location_data?.area || "",
       location_address: complaint.location_data?.address || "",
+      location_pincode: complaint.location_data?.pincode || "",
       location_lat: complaint.location_data?.lat || complaint.Location?.latitude || "",
       location_lng: complaint.location_data?.lng || complaint.Location?.longitude || "",
     }));
@@ -1359,6 +1363,7 @@ const exportComplaints = async (req, res) => {
       "operator_email",
       "location_area",
       "location_address",
+      "location_pincode",
       "location_lat",
       "location_lng",
     ];

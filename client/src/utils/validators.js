@@ -79,6 +79,13 @@ export const validators = {
   },
 
   /**
+   * Check if pincode is valid (India 6-digit format)
+   */
+  isValidPincode: (pincode) => {
+    return /^\d{6}$/.test(String(pincode || "").trim());
+  },
+
+  /**
    * Check if string is not empty
    */
   isNotEmpty: (value) => {

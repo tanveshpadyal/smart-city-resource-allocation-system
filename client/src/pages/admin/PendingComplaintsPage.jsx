@@ -35,6 +35,20 @@ export const PendingComplaintsPage = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [exporting, setExporting] = useState(false);
 
+  const getStatusButtonStyles = (status) => {
+    switch (status) {
+      case "ASSIGNED":
+        return "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300";
+      case "IN_PROGRESS":
+        return "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300";
+      case "RESOLVED":
+        return "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300";
+      case "PENDING":
+      default:
+        return "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300";
+    }
+  };
+
   const loadData = useCallback(async () => {
     try {
       const [pendingRes, operatorsRes] = await Promise.all([
@@ -54,7 +68,7 @@ export const PendingComplaintsPage = () => {
 
       const defaultSelection = {};
       pending.forEach((complaint) => {
-        if (activeOperators[0]?.id) {
+        if (complaint.status === "PENDING" && activeOperators[0]?.id) {
           defaultSelection[complaint.id] = activeOperators[0].id;
         }
       });
@@ -253,34 +267,53 @@ export const PendingComplaintsPage = () => {
                       </p>
                     </div>
 
-                    <div className="flex w-full gap-2 md:w-auto">
-                      <select
-                        className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm transition-all duration-200 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-indigo-400 dark:focus:ring-indigo-500/30 md:w-64"
-                        value={selectedOperators[complaint.id] || ""}
-                        onChange={(e) =>
-                          setSelectedOperators((prev) => ({
-                            ...prev,
-                            [complaint.id]: e.target.value,
-                          }))
-                        }
-                      >
-                        <option value="">Select operator</option>
-                        {operators.map((operator) => (
-                          <option key={operator.id} value={operator.id}>
-                            {operator.name} ({operator.email})
-                          </option>
-                        ))}
-                      </select>
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => handleAssign(complaint.id)}
-                        disabled={!selectedOperators[complaint.id]}
-                        loading={assigningId === complaint.id}
-                      >
-                        Assign
-                      </Button>
-                    </div>
+                    {complaint.status === "PENDING" ? (
+                      <div className="flex w-full gap-2 md:w-auto">
+                        <select
+                          className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm transition-all duration-200 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-indigo-400 dark:focus:ring-indigo-500/30 md:w-64"
+                          value={selectedOperators[complaint.id] || ""}
+                          onChange={(e) =>
+                            setSelectedOperators((prev) => ({
+                              ...prev,
+                              [complaint.id]: e.target.value,
+                            }))
+                          }
+                        >
+                          <option value="">Select operator</option>
+                          {operators.map((operator) => (
+                            <option key={operator.id} value={operator.id}>
+                              {operator.name} ({operator.email})
+                            </option>
+                          ))}
+                        </select>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleAssign(complaint.id)}
+                          disabled={!selectedOperators[complaint.id]}
+                          loading={assigningId === complaint.id}
+                        >
+                          Assign
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex w-full flex-col items-stretch gap-2 md:w-auto md:items-end">
+                        <button
+                          type="button"
+                          className={`rounded-lg px-3 py-2 text-sm font-semibold ${getStatusButtonStyles(
+                            complaint.status,
+                          )}`}
+                          disabled
+                        >
+                          {complaint.status?.replace("_", " ") || "UNKNOWN"}
+                        </button>
+                        {complaint.Operator?.name && (
+                          <p className="text-xs text-neutral-500 dark:text-slate-400">
+                            Assigned to {complaint.Operator.name}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

@@ -6,9 +6,10 @@ import { useCallback, useEffect, useMemo } from "react";
 import { CitizenLayout } from "../../components/layouts/CitizenLayout";
 import { InlineSpinner } from "../../components/common/Spinner";
 import { ErrorAlert } from "../../components/common/Alert";
-import { Button } from "../../components/common";
+import { Button, MetricCard } from "../../components/common";
 import useRequest from "../../hooks/useRequest";
 import { Link } from "react-router-dom";
+import { Clock3, FileText, PackageCheck, XCircle } from "lucide-react";
 
 export const CitizenDashboardPage = () => {
   const { requests, loading, error, getMyRequests } = useRequest();
@@ -52,28 +53,34 @@ export const CitizenDashboardPage = () => {
       <div className="space-y-6">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-slate-800 dark:bg-[#020617]">
-            <p className="mb-2 text-sm text-neutral-600 dark:text-slate-400">Total Requests</p>
-            <p className="text-3xl font-bold text-primary-600 dark:text-indigo-400">{stats.total}</p>
-          </div>
-          <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-slate-800 dark:bg-[#020617]">
-            <p className="mb-2 text-sm text-neutral-600 dark:text-slate-400">Pending</p>
-            <p className="text-3xl font-bold text-warning-600 dark:text-amber-400">
-              {stats.pending}
-            </p>
-          </div>
-          <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-slate-800 dark:bg-[#020617]">
-            <p className="mb-2 text-sm text-neutral-600 dark:text-slate-400">Fulfilled</p>
-            <p className="text-3xl font-bold text-success-600 dark:text-emerald-500">
-              {stats.fulfilled}
-            </p>
-          </div>
-          <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-slate-800 dark:bg-[#020617]">
-            <p className="mb-2 text-sm text-neutral-600 dark:text-slate-400">Cancelled</p>
-            <p className="text-3xl font-bold text-error-600 dark:text-rose-500">
-              {stats.cancelled}
-            </p>
-          </div>
+          <MetricCard
+            title="Total Requests"
+            value={stats.total}
+            subtitle="All requests created"
+            icon={FileText}
+            tone="indigo"
+          />
+          <MetricCard
+            title="Pending"
+            value={stats.pending}
+            subtitle="Awaiting fulfillment"
+            icon={Clock3}
+            tone="amber"
+          />
+          <MetricCard
+            title="Fulfilled"
+            value={stats.fulfilled}
+            subtitle="Completed requests"
+            icon={PackageCheck}
+            tone="emerald"
+          />
+          <MetricCard
+            title="Cancelled"
+            value={stats.cancelled}
+            subtitle="Requests closed early"
+            icon={XCircle}
+            tone="rose"
+          />
         </div>
 
         {/* Quick Actions */}
@@ -92,7 +99,7 @@ export const CitizenDashboardPage = () => {
         </div>
 
         {/* Recent Requests */}
-        <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-slate-800 dark:bg-[#020617]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/70 transition-all duration-200 hover:shadow-lg hover:shadow-slate-300/70 dark:border-slate-800 dark:bg-[#020617] dark:shadow-black/40 dark:hover:shadow-black/55">
           <h2 className="mb-4 text-lg font-bold text-neutral-900 dark:text-slate-200">
             Recent Requests
           </h2>
@@ -109,7 +116,7 @@ export const CitizenDashboardPage = () => {
               {requests.slice(0, 5).map((request) => (
                 <div
                   key={request.id}
-                  className="flex flex-col gap-2 border-b border-neutral-100 pb-3 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800"
+                  className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800 dark:bg-[#02061780]"
                 >
                   <div>
                     <p className="font-medium text-neutral-900 dark:text-slate-200">

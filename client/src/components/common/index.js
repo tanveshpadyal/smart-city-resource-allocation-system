@@ -4,3 +4,4 @@ export { Input, Textarea, Select } from "./Input";
 export { Spinner, PageSpinner, InlineSpinner } from "./Spinner";
 export { ErrorAlert, SuccessAlert, WarningAlert } from "./Alert";
 export { Badge, StatusBadge, PriorityBadge, RoleBadge } from "./Badge";
+export { MetricCard } from "./MetricCard";

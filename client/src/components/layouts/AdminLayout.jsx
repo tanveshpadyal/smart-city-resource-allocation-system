@@ -32,43 +32,23 @@ export const AdminLayout = ({ children }) => {
 
   useEffect(() => {
     const handleResize = () => {
-      setSidebarOpen(window.innerWidth >= 768);
-      if (window.innerWidth < 768) {
+      const desktop = window.innerWidth >= 1024;
+      setSidebarOpen(desktop);
+      if (!desktop) {
         setCollapsed(false);
       }
     };
-
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const menuItems = [
-    {
-      label: "Dashboard",
-      href: "/admin/dashboard",
-      icon: LayoutDashboard,
-    },
-    {
-      label: "Pending",
-      href: "/admin/pending-complaints",
-      icon: Clock3,
-    },
-    {
-      label: "Users",
-      href: "/admin/users",
-      icon: Users,
-    },
-    {
-      label: "Add Operator",
-      href: "/admin/add-operator",
-      icon: UserPlus,
-    },
-    {
-      label: "Activity",
-      href: "/admin/activity-logs",
-      icon: Activity,
-    },
+    { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+    { label: "Pending", href: "/admin/pending-complaints", icon: Clock3 },
+    { label: "Users", href: "/admin/users", icon: Users },
+    { label: "Add Operator", href: "/admin/add-operator", icon: UserPlus },
+    { label: "Activity", href: "/admin/activity-logs", icon: Activity },
   ];
 
   const isActive = (href) => location.pathname.startsWith(href);
@@ -78,142 +58,154 @@ export const AdminLayout = ({ children }) => {
     navigate("/login");
   };
 
+  const initials = (user?.name || "AD")
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  const avatarUrl = user?.profile_photo || user?.profilePhoto || "";
+
   return (
-    <div className="min-h-screen overflow-x-hidden bg-neutral-50 dark:bg-[#0f172a]">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0f172a]">
       {sidebarOpen && (
         <button
           type="button"
           onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 z-30 bg-black/40 md:hidden dark:bg-black/60"
+          className="fixed inset-0 z-30 bg-slate-900/20 backdrop-blur-[1px] lg:hidden dark:bg-black/50"
           aria-label="Close sidebar"
         />
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 border-r border-neutral-200 bg-white transition-all duration-[2000ms] md:translate-x-0 dark:border-slate-800 dark:bg-[#020617] ${
+        className={`fixed inset-y-0 left-0 z-40 border-r border-slate-200/70 bg-white/95 shadow-lg shadow-slate-300/40 backdrop-blur transition-all duration-[1000ms] ease-in-out lg:translate-x-0 dark:border-slate-800/70 dark:bg-[#020617]/90 dark:shadow-black/40 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } ${collapsed ? "md:w-20" : "md:w-64"}`}
+        } ${collapsed ? "w-20" : "w-72"}`}
       >
         <div className="flex h-full flex-col">
-          <div className="sticky top-0 flex h-16 items-center justify-between border-b border-primary-200 px-4 bg-primary-50 z-10 dark:border-slate-800 dark:bg-[#020617]">
-          <span
-            className={`overflow-hidden whitespace-nowrap text-lg font-bold text-neutral-900 transition-all duration-[2000ms] dark:text-slate-200 ${
-              collapsed ? "max-w-0 opacity-0 md:max-w-0" : "max-w-28 opacity-100"
-            }`}
-          >
-            Admin
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="rounded-md border border-neutral-200 px-2 py-1 text-neutral-700 hover:bg-neutral-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900"
-              aria-label="Toggle theme"
-            >
-              {isDark ? <Sun size={14} /> : <Moon size={14} />}
-            </button>
-            <button
-              type="button"
-              onClick={() => setCollapsed((prev) => !prev)}
-              className="hidden rounded-md border border-neutral-200 px-2 py-1 text-neutral-700 transition-colors hover:bg-neutral-100 md:inline-flex dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900"
-              aria-label="Collapse sidebar"
-            >
-              {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-            </button>
-            <button
-              type="button"
-              onClick={() => setSidebarOpen((open) => !open)}
-              className={`rounded-md px-2 py-1 text-xs font-bold transition-colors md:hidden ${
-                sidebarOpen
-                  ? "bg-primary-100 text-primary-700 hover:bg-primary-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:hover:bg-indigo-500/30"
-                  : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+          <div className="flex h-16 items-center justify-between border-b border-slate-200/70 px-4 dark:border-slate-800/70">
+            <div
+              className={`flex items-center gap-3 overflow-hidden transition-all duration-[1000ms] ease-in-out ${
+                collapsed ? "max-w-0 opacity-0" : "max-w-56 opacity-100"
               }`}
-              aria-label="Toggle sidebar"
             >
-              {sidebarOpen ? <X size={16} /> : <Menu size={16} />}
-            </button>
-          </div>
-          </div>
-
-          <nav className="flex flex-1 flex-col gap-2 p-4 overflow-y-auto">
-          {menuItems.map((item) => (
-            <Link
-              key={item.href}
-              to={item.href}
-              className={`relative flex items-center gap-3 rounded-xl py-2.5 transition-all ${
-                isActive(item.href)
-                  ? "bg-primary-100 text-primary-700 shadow-sm ring-1 ring-primary-200 dark:bg-indigo-500/25 dark:text-indigo-300 dark:ring-indigo-500/40"
-                  : "text-neutral-600 hover:bg-neutral-100 dark:text-slate-300 dark:hover:bg-slate-900"
-              } ${collapsed ? "px-3 md:justify-center" : "px-4"}`}
-            >
-              {isActive(item.href) && (
-                <span className="absolute inset-y-2 left-1 w-1 rounded-full bg-primary-600 dark:bg-indigo-400" />
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="Profile"
+                  className="h-10 w-10 rounded-xl border border-indigo-200 object-cover dark:border-indigo-500/40"
+                />
+              ) : (
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-blue-500 text-sm font-semibold text-white">
+                  {initials}
+                </div>
               )}
-              <item.icon
-                size={18}
-                className={`shrink-0 ${
-                  isActive(item.href)
-                    ? "text-primary-700 dark:text-indigo-300"
-                    : "text-neutral-400 dark:text-slate-500"
-                }`}
-              />
-              <span
-                className={`overflow-hidden whitespace-nowrap transition-all duration-[2000ms] ${
-                  collapsed ? "max-w-0 opacity-0" : "max-w-40 opacity-100"
-                }`}
+              <div>
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-200">
+                  {user?.name || "Administrator"}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Administrator</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900"
+                aria-label="Toggle theme"
               >
-                {item.label}
-              </span>
-            </Link>
-          ))}
-          </nav>
-
-          <div className="sticky bottom-0 border-t border-neutral-200 bg-white p-4 dark:border-slate-800 dark:bg-[#020617]">
-          <div
-            className={`overflow-hidden transition-all duration-[2000ms] ${
-              collapsed ? "max-h-0 opacity-0" : "max-h-24 opacity-100"
-            }`}
-          >
-            <div className="mb-4 rounded-lg bg-neutral-50 p-3 text-sm dark:bg-slate-900">
-              <p className="font-medium text-neutral-900 dark:text-slate-200">{user?.name}</p>
-              <p className="text-xs text-neutral-600 dark:text-slate-400">Administrator</p>
+                {isDark ? <Sun size={16} /> : <Moon size={16} />}
+              </button>
+              <button
+                type="button"
+                onClick={() => setCollapsed((prev) => !prev)}
+                className="hidden h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900 lg:inline-flex"
+                aria-label="Collapse sidebar"
+              >
+                {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSidebarOpen(false)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900 lg:hidden"
+                aria-label="Close sidebar"
+              >
+                <X size={16} />
+              </button>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="w-full rounded-lg bg-error-100 px-4 py-2 text-error-700 transition-colors text-sm font-medium hover:bg-error-200 flex items-center justify-center gap-2 dark:bg-rose-500/20 dark:text-rose-300 dark:hover:bg-rose-500/30"
-          >
-            <LogOut size={16} />
-            <span
-              className={`overflow-hidden whitespace-nowrap transition-all duration-[2000ms] ${
-                collapsed ? "max-w-0 opacity-0" : "max-w-20 opacity-100"
-              }`}
+
+          <nav className="flex-1 space-y-1 p-3">
+            {menuItems.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={`group relative flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all ${
+                  isActive(item.href)
+                    ? "bg-indigo-100 text-indigo-700 shadow-sm ring-1 ring-indigo-200 dark:bg-indigo-500/25 dark:text-indigo-300 dark:ring-indigo-500/40"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-slate-100"
+                }`}
+                onClick={() => setSidebarOpen(false)}
+              >
+                {isActive(item.href) && (
+                  <span className="absolute inset-y-2 left-1 w-1 rounded-full bg-indigo-500 dark:bg-indigo-400" />
+                )}
+                <item.icon
+                  size={18}
+                  className={`shrink-0 ${
+                    isActive(item.href)
+                      ? "text-indigo-600 dark:text-indigo-300"
+                      : "text-slate-400 group-hover:text-slate-700 dark:text-slate-500 dark:group-hover:text-slate-300"
+                  }`}
+                />
+                <span
+                  className={`overflow-hidden whitespace-nowrap transition-all duration-[1000ms] ease-in-out ${
+                    collapsed ? "max-w-0 opacity-0" : "max-w-40 opacity-100"
+                  }`}
+                >
+                  {item.label}
+                </span>
+              </Link>
+            ))}
+          </nav>
+
+          <div className="border-t border-slate-200/70 p-3 dark:border-slate-800/70">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-rose-50 px-3 py-2.5 text-sm font-semibold text-rose-700 transition-transform hover:bg-rose-100 active:scale-[0.98] dark:bg-rose-500/20 dark:text-rose-300 dark:hover:bg-rose-500/30"
             >
-              Logout
-            </span>
-          </button>
+              <LogOut size={16} />
+              <span
+                className={`overflow-hidden whitespace-nowrap transition-all duration-[1000ms] ease-in-out ${
+                  collapsed ? "max-w-0 opacity-0" : "max-w-20 opacity-100"
+                }`}
+              >
+                Logout
+              </span>
+            </button>
           </div>
         </div>
       </aside>
 
       <main
-        className={`min-w-0 overflow-x-hidden overflow-y-auto transition-all duration-300 ${collapsed ? "md:ml-20" : "md:ml-64"}`}
+        className={`min-h-screen transition-all duration-300 ${
+          collapsed ? "lg:pl-20" : "lg:pl-72"
+        }`}
       >
-        <div className="border-b border-neutral-200 bg-white p-4 shadow-sm flex items-center gap-3 dark:border-slate-800 dark:bg-[#020617]">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="md:hidden rounded-lg border border-neutral-200 px-3 py-2 text-neutral-600 hover:bg-neutral-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900"
-            aria-label="Open sidebar"
-          >
-            Menu
-          </button>
-          <h1 className="text-lg font-bold text-neutral-900 sm:text-2xl dark:text-slate-200">
-            System Administration
-          </h1>
+        <div className="mx-auto w-full max-w-[1400px] px-4 py-5 md:px-6">
+          {children}
         </div>
-
-        <div className="max-w-full p-4 md:p-6">{children}</div>
       </main>
+
+      <button
+        type="button"
+        onClick={() => setSidebarOpen(true)}
+        className="fixed bottom-4 right-4 z-20 inline-flex h-11 w-11 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg transition-transform hover:bg-indigo-700 active:scale-[0.96] dark:bg-indigo-500 dark:hover:bg-indigo-400 lg:hidden"
+        aria-label="Open sidebar"
+      >
+        <Menu size={18} />
+      </button>
     </div>
   );
 };

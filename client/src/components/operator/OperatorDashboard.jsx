@@ -3,7 +3,6 @@ import {
   CheckCircle2,
   Clock3,
   FolderKanban,
-  Sparkles,
   Timer,
 } from "lucide-react";
 import StatCard from "./StatCard";
@@ -82,10 +81,6 @@ const OperatorDashboard = ({ requests = [], loading = false }) => {
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Clean view of your queue, progress, and SLA pressure.
           </p>
-        </div>
-        <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs text-slate-600 shadow-sm ring-1 ring-slate-200 dark:bg-[#020617] dark:text-slate-300 dark:ring-slate-800">
-          <Sparkles size={14} className="text-indigo-600 dark:text-indigo-400" />
-          SaaS Ops View
         </div>
       </section>
 
