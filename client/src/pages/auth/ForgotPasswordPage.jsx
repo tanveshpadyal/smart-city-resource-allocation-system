@@ -11,11 +11,13 @@ export const ForgotPasswordPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [devResetUrl, setDevResetUrl] = useState("");
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
     setSuccess("");
+    setDevResetUrl("");
 
     if (!validators.isValidEmail(email)) {
       setError("Please enter a valid email address.");
@@ -29,6 +31,9 @@ export const ForgotPasswordPage = () => {
         response?.message ||
           "If an account exists with that email, a reset link has been sent.",
       );
+      if (response?.data?.resetUrl) {
+        setDevResetUrl(response.data.resetUrl);
+      }
     } catch (err) {
       const message =
         err.response?.data?.error ||
@@ -53,6 +58,17 @@ export const ForgotPasswordPage = () => {
             {error && <ErrorAlert message={error} onClose={() => setError("")} />}
             {success && (
               <SuccessAlert message={success} onClose={() => setSuccess("")} />
+            )}
+            {devResetUrl && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                <p className="font-medium">Development Reset Link</p>
+                <a
+                  href={devResetUrl}
+                  className="break-all font-semibold text-indigo-700 hover:text-indigo-800"
+                >
+                  {devResetUrl}
+                </a>
+              </div>
             )}
           </div>
 

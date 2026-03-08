@@ -6,7 +6,12 @@
 const db = require("../models");
 const { Sequelize } = require("sequelize");
 const { Parser } = require("json2csv");
-const { assignComplaintByArea } = require("../services/complaintAssignment");
+const {
+  assignComplaintByArea,
+  computeLocationBucket,
+  findOpenBucketParent,
+  ACTIVE_COMPLAINT_STATUSES,
+} = require("../services/complaintAssignment");
 const { SLA_HOURS, updateSlaBreaches } = require("../services/slaService");
 const { Op } = Sequelize;
 
@@ -141,25 +146,71 @@ const createRequest = async (req, res) => {
       });
     }
 
-    // ========== CREATE COMPLAINT ==========
-    const complaintArea =
-      locationPayload?.area || locationRecord?.zone_name || "";
-    const autoAssignedOperator = await assignComplaintByArea(complaintArea);
-    const isAutoAssigned = Boolean(autoAssignedOperator?.id);
-
-    const complaint = await db.Request.create({
-      user_id: userId,
-      location_id: locationRecord?.id || null,
-      location_data: locationPayload,
+    const complaintArea = locationPayload?.area || locationRecord?.zone_name || "";
+    const locationBucket = computeLocationBucket(
       complaint_category,
-      assigned_to: isAutoAssigned ? autoAssignedOperator.id : null,
-      description,
-      image: image || null,
-      slaBreached: false,
-      status: isAutoAssigned ? "ASSIGNED" : "PENDING",
-      requested_at: new Date(),
-      assigned_at: isAutoAssigned ? new Date() : null,
-    });
+      locationPayload?.lat,
+      locationPayload?.lng,
+    );
+
+    const transaction = await db.sequelize.transaction();
+    let complaint;
+    let autoAssignedOperator = null;
+    let assignmentStrategy = "AUTO";
+    let parentComplaintId = null;
+
+    try {
+      const openBucketParent = await findOpenBucketParent(
+        locationBucket,
+        transaction,
+      );
+      if (openBucketParent) {
+        parentComplaintId = openBucketParent.id;
+      }
+
+      autoAssignedOperator = await assignComplaintByArea(
+        complaintArea,
+        transaction,
+      );
+      const isAutoAssigned = Boolean(autoAssignedOperator?.id);
+      if (!isAutoAssigned) {
+        assignmentStrategy = "ESCALATED";
+      }
+
+      complaint = await db.Request.create(
+        {
+          user_id: userId,
+          location_id: locationRecord?.id || null,
+          location_data: locationPayload,
+          complaint_category,
+          assigned_to: isAutoAssigned ? autoAssignedOperator.id : null,
+          description,
+          image: image || null,
+          slaBreached: false,
+          status: isAutoAssigned ? "ASSIGNED" : "PENDING",
+          requested_at: new Date(),
+          assigned_at: isAutoAssigned ? new Date() : null,
+          assignment_strategy: assignmentStrategy,
+          assignment_score: autoAssignedOperator?.score || null,
+          assignment_reason: autoAssignedOperator?.reason || "No available contractor for area",
+          location_bucket: locationBucket,
+          parent_complaint_id: parentComplaintId,
+        },
+        { transaction },
+      );
+
+      if (isAutoAssigned) {
+        await db.User.update(
+          { last_assigned_at: new Date() },
+          { where: { id: autoAssignedOperator.id }, transaction },
+        );
+      }
+
+      await transaction.commit();
+    } catch (innerError) {
+      await transaction.rollback();
+      throw innerError;
+    }
 
     // ========== LOG COMPLAINT CREATION ==========
     await db.ActionLog.create({
@@ -171,8 +222,11 @@ const createRequest = async (req, res) => {
         category: complaint_category,
         location_id: locationRecord?.id || null,
         location: locationPayload,
-        auto_assigned: isAutoAssigned,
+        auto_assigned: Boolean(autoAssignedOperator?.id),
         assigned_to: autoAssignedOperator?.id || null,
+        assignment_strategy: complaint.assignment_strategy,
+        assignment_reason: complaint.assignment_reason,
+        parent_complaint_id: complaint.parent_complaint_id || null,
       },
     });
 
@@ -603,11 +657,30 @@ const assignComplaint = async (req, res) => {
       });
     }
 
+    const activeCount = await db.Request.count({
+      where: {
+        assigned_to: operator_id,
+        status: { [Op.in]: ACTIVE_COMPLAINT_STATUSES },
+      },
+    });
+    const capacity = Number(operator.max_active_complaints) || 10;
+    if (activeCount >= capacity) {
+      return res.status(400).json({
+        success: false,
+        error: `Contractor capacity reached (${activeCount}/${capacity})`,
+        code: "CONTRACTOR_OVERLOADED",
+      });
+    }
+
     // Update complaint
     complaint.assigned_to = operator_id;
     complaint.status = "ASSIGNED";
     complaint.assigned_at = new Date();
+    complaint.assignment_strategy = "MANUAL";
+    complaint.assignment_score = activeCount / capacity;
+    complaint.assignment_reason = `manual override by admin (load ${activeCount}/${capacity})`;
     await complaint.save();
+    await operator.update({ last_assigned_at: new Date() });
 
     // Log assignment
     await db.ActionLog.create({
@@ -1579,6 +1652,118 @@ const createAdminArea = async (req, res) => {
   }
 };
 
+/**
+ * GET CONTRACTOR WORKLOAD SUMMARY (ADMIN ONLY)
+ */
+const getContractorWorkloadSummary = async (req, res) => {
+  try {
+    const contractors = await db.User.findAll({
+      where: {
+        role: "OPERATOR",
+        status: "active",
+        is_active: true,
+      },
+      attributes: [
+        "id",
+        "name",
+        "email",
+        "isActive",
+        "max_active_complaints",
+        "last_assigned_at",
+      ],
+      order: [["name", "ASC"]],
+    });
+
+    const contractorIds = contractors.map((c) => c.id);
+    const loadRows = contractorIds.length
+      ? await db.Request.findAll({
+          where: {
+            assigned_to: { [Op.in]: contractorIds },
+            status: { [Op.in]: ACTIVE_COMPLAINT_STATUSES },
+          },
+          attributes: [
+            "assigned_to",
+            [db.sequelize.fn("COUNT", db.sequelize.col("id")), "activeCount"],
+          ],
+          group: ["assigned_to"],
+          raw: true,
+        })
+      : [];
+
+    const loadMap = new Map(
+      loadRows.map((row) => [row.assigned_to, Number(row.activeCount) || 0]),
+    );
+
+    const data = contractors.map((contractor) => {
+      const activeCount = loadMap.get(contractor.id) || 0;
+      const capacity = Number(contractor.max_active_complaints) || 10;
+      return {
+        id: contractor.id,
+        name: contractor.name,
+        email: contractor.email,
+        available: Boolean(contractor.isActive),
+        activeCount,
+        capacity,
+        utilization: Number((activeCount / capacity).toFixed(4)),
+        lastAssignedAt: contractor.last_assigned_at,
+      };
+    });
+
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.error("Error in getContractorWorkloadSummary:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to fetch contractor workload summary",
+      code: "WORKLOAD_FETCH_ERROR",
+    });
+  }
+};
+
+/**
+ * GET UNASSIGNED COMPLAINT QUEUE (ADMIN ONLY)
+ */
+const getUnassignedQueue = async (req, res) => {
+  try {
+    const complaints = await db.Request.findAll({
+      where: {
+        status: "PENDING",
+        assigned_to: null,
+      },
+      include: [
+        {
+          model: db.Location,
+          attributes: ["id", "zone_name"],
+          required: false,
+        },
+        {
+          model: db.User,
+          as: "assignedOperator",
+          attributes: ["id", "name"],
+          required: false,
+        },
+      ],
+      order: [["requested_at", "ASC"]],
+      limit: 200,
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: complaints.map((item) => ({
+        ...item.toJSON(),
+        dispatch_reason: item.assignment_reason || "No available contractor for this area",
+      })),
+    });
+  } catch (error) {
+    console.error("Error in getUnassignedQueue:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to fetch unassigned queue",
+      code: "UNASSIGNED_QUEUE_ERROR",
+    });
+  }
+};
+
 // ============ EXPORTS ============
 module.exports = {
   // Citizen operations
@@ -1600,6 +1785,8 @@ module.exports = {
   getAreaOptions,
   getAdminAreas,
   createAdminArea,
+  getContractorWorkloadSummary,
+  getUnassignedQueue,
 
   // Operator operations
   getAssignedComplaints,

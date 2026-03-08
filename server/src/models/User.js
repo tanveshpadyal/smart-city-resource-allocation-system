@@ -64,6 +64,18 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: true,
         comment: "Operator availability for auto-assignment",
       },
+      max_active_complaints: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 10,
+        validate: { min: 1 },
+        comment: "Maximum active complaints (ASSIGNED/IN_PROGRESS) allowed",
+      },
+      last_assigned_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: "Last timestamp this contractor received auto/manual assignment",
+      },
       assignedAreas: {
         type: DataTypes.ARRAY(DataTypes.STRING),
         allowNull: false,

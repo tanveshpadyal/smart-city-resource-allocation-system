@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Input Component
  * Form input wrapper with label and error handling
  */
@@ -15,6 +15,8 @@ export const Input = ({
   onChange,
   disabled = false,
   className = "",
+  name,
+  autoComplete,
   ...props
 }) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -32,17 +34,35 @@ export const Input = ({
       <div className="relative">
         <input
           type={resolvedType}
+          name={name}
+          autoComplete={autoComplete}
           value={value}
           onChange={onChange}
           placeholder={placeholder}
           disabled={disabled}
-          className={`w-full rounded-lg border px-4 py-2 transition-colors ${
-            error
-              ? "border-red-500 bg-red-50 text-red-900 placeholder-red-400 focus:border-red-600 focus:ring-2 focus:ring-red-200 dark:border-rose-500/60 dark:bg-rose-500/10 dark:text-rose-200 dark:placeholder-rose-300 dark:focus:border-rose-400 dark:focus:ring-rose-500/30"
-              : "border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:placeholder-slate-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-500/30"
-          } ${
-            isPasswordField ? "pr-11" : ""
-          } disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-slate-800 ${className}`}
+          className={`
+            w-full rounded-xl border border-slate-300
+            bg-white px-3 py-2 text-sm text-slate-900
+            placeholder:text-slate-400
+            shadow-sm
+            transition-all duration-200
+
+            focus:outline-none
+            focus:ring-2
+            focus:ring-indigo-500/40
+            focus:border-indigo-500
+
+            dark:border-slate-700
+            dark:bg-slate-900
+            dark:text-slate-100
+            dark:focus:ring-indigo-400/40
+            dark:focus:border-indigo-400
+
+            ${error ? "border-red-500 focus:ring-red-400/40 focus:border-red-500" : ""}
+            ${isPasswordField ? "pr-11" : ""}
+            disabled:cursor-not-allowed disabled:bg-slate-100 dark:disabled:bg-slate-800
+            ${className}
+          `}
           {...props}
         />
         {isPasswordField && (
@@ -149,5 +169,3 @@ export const Select = ({
     </div>
   );
 };
-
-export default Input;

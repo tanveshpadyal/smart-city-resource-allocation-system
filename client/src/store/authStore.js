@@ -4,7 +4,7 @@
  */
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import config from "../config";
 import authService from "../services/authService";
 
@@ -19,16 +19,14 @@ const useAuthStore = create(
       error: null,
       isAuthenticated: false,
 
-      // Actions
-
       /**
-       * Initialize auth state from localStorage (on app load)
+       * Initialize auth state from sessionStorage (on app load)
        */
       initializeAuth: async () => {
         try {
-          const storedUser = localStorage.getItem(config.auth.userKey);
-          const storedAccessToken = localStorage.getItem(config.auth.tokenKey);
-          const storedRefreshToken = localStorage.getItem(
+          const storedUser = sessionStorage.getItem(config.auth.userKey);
+          const storedAccessToken = sessionStorage.getItem(config.auth.tokenKey);
+          const storedRefreshToken = sessionStorage.getItem(
             config.auth.refreshTokenKey,
           );
 
@@ -41,7 +39,6 @@ const useAuthStore = create(
               error: null,
             });
 
-            // Verify token is still valid by fetching user profile
             try {
               const response = await authService.getCurrentUser();
               const userData = {
@@ -52,12 +49,8 @@ const useAuthStore = create(
                 profilePhoto: response.data.profile_photo || null,
                 profile_photo: response.data.profile_photo || null,
               };
-              set({
-                user: userData,
-                error: null,
-              });
+              set({ user: userData, error: null });
             } catch {
-              // Token might be expired, try to refresh
               if (storedRefreshToken) {
                 try {
                   const refreshResponse =
@@ -67,8 +60,8 @@ const useAuthStore = create(
                     refreshToken: newRefreshToken,
                   } = refreshResponse.data;
 
-                  localStorage.setItem(config.auth.tokenKey, newAccessToken);
-                  localStorage.setItem(
+                  sessionStorage.setItem(config.auth.tokenKey, newAccessToken);
+                  sessionStorage.setItem(
                     config.auth.refreshTokenKey,
                     newRefreshToken,
                   );
@@ -79,7 +72,6 @@ const useAuthStore = create(
                     error: null,
                   });
                 } catch {
-                  // Refresh failed, logout
                   get().logout();
                 }
               } else {
@@ -93,9 +85,6 @@ const useAuthStore = create(
         }
       },
 
-      /**
-       * Register new user
-       */
       register: async (name, email, password, passwordConfirm) => {
         set({ isLoading: true, error: null });
         try {
@@ -106,7 +95,6 @@ const useAuthStore = create(
             passwordConfirm,
           );
 
-          // Extract data from backend response
           const { data } = response;
           const userData = {
             id: data.userId,
@@ -126,10 +114,9 @@ const useAuthStore = create(
             error: null,
           });
 
-          // Store in localStorage
-          localStorage.setItem(config.auth.userKey, JSON.stringify(userData));
-          localStorage.setItem(config.auth.tokenKey, data.accessToken);
-          localStorage.setItem(config.auth.refreshTokenKey, data.refreshToken);
+          sessionStorage.setItem(config.auth.userKey, JSON.stringify(userData));
+          sessionStorage.setItem(config.auth.tokenKey, data.accessToken);
+          sessionStorage.setItem(config.auth.refreshTokenKey, data.refreshToken);
 
           return response;
         } catch (error) {
@@ -140,15 +127,11 @@ const useAuthStore = create(
         }
       },
 
-      /**
-       * Login user
-       */
       login: async (email, password) => {
         set({ isLoading: true, error: null });
         try {
           const response = await authService.login(email, password);
 
-          // Extract data from backend response
           const { data } = response;
           const userData = {
             id: data.userId,
@@ -168,10 +151,9 @@ const useAuthStore = create(
             error: null,
           });
 
-          // Store in localStorage
-          localStorage.setItem(config.auth.userKey, JSON.stringify(userData));
-          localStorage.setItem(config.auth.tokenKey, data.accessToken);
-          localStorage.setItem(config.auth.refreshTokenKey, data.refreshToken);
+          sessionStorage.setItem(config.auth.userKey, JSON.stringify(userData));
+          sessionStorage.setItem(config.auth.tokenKey, data.accessToken);
+          sessionStorage.setItem(config.auth.refreshTokenKey, data.refreshToken);
 
           return response;
         } catch (error) {
@@ -181,9 +163,6 @@ const useAuthStore = create(
         }
       },
 
-      /**
-       * Login via Google
-       */
       googleLogin: async (idToken) => {
         set({ isLoading: true, error: null });
         try {
@@ -207,9 +186,9 @@ const useAuthStore = create(
             error: null,
           });
 
-          localStorage.setItem(config.auth.userKey, JSON.stringify(userData));
-          localStorage.setItem(config.auth.tokenKey, data.accessToken);
-          localStorage.setItem(config.auth.refreshTokenKey, data.refreshToken);
+          sessionStorage.setItem(config.auth.userKey, JSON.stringify(userData));
+          sessionStorage.setItem(config.auth.tokenKey, data.accessToken);
+          sessionStorage.setItem(config.auth.refreshTokenKey, data.refreshToken);
 
           return response;
         } catch (error) {
@@ -220,21 +199,15 @@ const useAuthStore = create(
         }
       },
 
-      /**
-       * Logout user
-       */
       logout: async () => {
         set({ isLoading: true, error: null });
         try {
-          // Optional: Call logout endpoint if backend requires it
           try {
             await authService.logout();
           } catch (error) {
-            // Logout endpoint might fail, but we still clear local state
             console.warn("Logout endpoint error:", error);
           }
 
-          // Clear all auth state
           set({
             user: null,
             accessToken: null,
@@ -244,20 +217,16 @@ const useAuthStore = create(
             error: null,
           });
 
-          // Clear localStorage
-          localStorage.removeItem(config.auth.userKey);
-          localStorage.removeItem(config.auth.tokenKey);
-          localStorage.removeItem(config.auth.refreshTokenKey);
-          localStorage.removeItem(config.auth.expirationKey);
+          sessionStorage.removeItem(config.auth.userKey);
+          sessionStorage.removeItem(config.auth.tokenKey);
+          sessionStorage.removeItem(config.auth.refreshTokenKey);
+          sessionStorage.removeItem(config.auth.expirationKey);
         } catch (error) {
           console.error("Logout error:", error);
           set({ error: "Logout failed", isLoading: false });
         }
       },
 
-      /**
-       * Refresh access token
-       */
       refreshAccessToken: async () => {
         const { refreshToken } = get();
         if (!refreshToken) {
@@ -277,21 +246,16 @@ const useAuthStore = create(
             error: null,
           });
 
-          // Update localStorage
-          localStorage.setItem(config.auth.tokenKey, newAccessToken);
-          localStorage.setItem(config.auth.refreshTokenKey, newRefreshToken);
+          sessionStorage.setItem(config.auth.tokenKey, newAccessToken);
+          sessionStorage.setItem(config.auth.refreshTokenKey, newRefreshToken);
 
           return response;
         } catch (error) {
-          // Refresh failed, logout user
           get().logout();
           throw error;
         }
       },
 
-      /**
-       * Change password
-       */
       changePassword: async (currentPassword, newPassword, confirmPassword) => {
         set({ isLoading: true, error: null });
         try {
@@ -310,41 +274,30 @@ const useAuthStore = create(
         }
       },
 
-      /**
-       * Update user profile
-       */
       updateUser: (userData) => {
         set((state) => ({
           user: { ...state.user, ...userData },
         }));
-        localStorage.setItem(config.auth.userKey, JSON.stringify(get().user));
+        sessionStorage.setItem(config.auth.userKey, JSON.stringify(get().user));
       },
 
-      /**
-       * Clear error message
-       */
       clearError: () => {
         set({ error: null });
       },
 
-      /**
-       * Check if user has a specific role
-       */
       hasRole: (role) => {
         const { user } = get();
         return user?.role === role;
       },
 
-      /**
-       * Check if user has one of multiple roles
-       */
       hasAnyRole: (roles) => {
         const { user } = get();
         return user && roles.includes(user.role);
       },
     }),
     {
-      name: "auth-store", // localStorage key
+      name: "auth-store",
+      storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,

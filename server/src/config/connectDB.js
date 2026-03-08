@@ -1,5 +1,45 @@
 const sequelize = require("./database");
 
+const ensureDispatchSchema = async () => {
+  await sequelize.query(`
+    ALTER TABLE "Users"
+    ADD COLUMN IF NOT EXISTS "max_active_complaints" INTEGER NOT NULL DEFAULT 10;
+  `);
+
+  await sequelize.query(`
+    ALTER TABLE "Users"
+    ADD COLUMN IF NOT EXISTS "last_assigned_at" TIMESTAMP WITH TIME ZONE;
+  `);
+
+  await sequelize.query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE t.typname = 'enum_Requests_assignment_strategy'
+      ) THEN
+        CREATE TYPE "enum_Requests_assignment_strategy" AS ENUM ('AUTO', 'MANUAL', 'ESCALATED');
+      END IF;
+    END $$;
+  `);
+
+  await sequelize.query(`
+    ALTER TABLE "Requests"
+    ADD COLUMN IF NOT EXISTS "assignment_strategy" "enum_Requests_assignment_strategy" NOT NULL DEFAULT 'AUTO';
+  `);
+
+  await sequelize.query(`
+    ALTER TABLE "Requests"
+    ADD COLUMN IF NOT EXISTS "assignment_score" DOUBLE PRECISION,
+    ADD COLUMN IF NOT EXISTS "assignment_reason" TEXT,
+    ADD COLUMN IF NOT EXISTS "location_bucket" VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS "parent_complaint_id" UUID,
+    ADD COLUMN IF NOT EXISTS "reassignment_cooldown_until" TIMESTAMP WITH TIME ZONE;
+  `);
+};
+
 const connectDB = async () => {
   try {
     // Load models with associations first
@@ -7,6 +47,9 @@ const connectDB = async () => {
 
     await sequelize.authenticate();
     console.log("PostgreSQL connected successfully");
+
+    await ensureDispatchSchema();
+    console.log("Dispatch/load-balancing schema ensured");
 
     // Sync all models with the database
     // Using alter: false for safety (use resetDB script if schema changes needed)

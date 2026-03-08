@@ -63,6 +63,31 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.ENUM("PENDING", "ASSIGNED", "IN_PROGRESS", "RESOLVED"),
         defaultValue: "PENDING",
       },
+      assignment_strategy: {
+        type: DataTypes.ENUM("AUTO", "MANUAL", "ESCALATED"),
+        allowNull: false,
+        defaultValue: "AUTO",
+      },
+      assignment_score: {
+        type: DataTypes.FLOAT,
+        allowNull: true,
+      },
+      assignment_reason: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      location_bucket: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      parent_complaint_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
+      },
+      reassignment_cooldown_until: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
       // Operator's remark when resolving
       operator_remark: {
         type: DataTypes.TEXT,
@@ -114,6 +139,9 @@ module.exports = (sequelize, DataTypes) => {
         { fields: ["location_id"] },
         { fields: ["location_data"] },
         { fields: ["assigned_to"] },
+        { fields: ["assignment_strategy"] },
+        { fields: ["location_bucket"] },
+        { fields: ["parent_complaint_id"] },
         { fields: ["status"] },
         { fields: ["slaBreached"] },
         { fields: ["requested_at"] },
@@ -137,6 +165,11 @@ module.exports = (sequelize, DataTypes) => {
 
     Request.belongsTo(models.Location, {
       foreignKey: "location_id",
+    });
+
+    Request.belongsTo(models.Request, {
+      foreignKey: "parent_complaint_id",
+      as: "ParentComplaint",
     });
   };
 

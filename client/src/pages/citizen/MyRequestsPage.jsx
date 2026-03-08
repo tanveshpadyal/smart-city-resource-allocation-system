@@ -10,6 +10,7 @@ import { ErrorAlert } from "../../components/common/Alert";
 import { Input } from "../../components/common";
 import useRequest from "../../hooks/useRequest";
 import { formatters } from "../../utils/formatters";
+import { getComplaintCategoryMeta } from "../../utils/complaintCategory";
 
 export const MyRequestsPage = () => {
   const navigate = useNavigate();
@@ -70,17 +71,6 @@ export const MyRequestsPage = () => {
       default:
         return "bg-gray-100 text-gray-800 dark:bg-slate-800 dark:text-slate-300";
     }
-  };
-
-  const getCategoryLabel = (category) => {
-    const labels = {
-      ROAD: "Road Issue",
-      GARBAGE: "Garbage/Waste",
-      WATER: "Water Issue",
-      LIGHT: "Street Light",
-      OTHER: "Other",
-    };
-    return labels[category] || category;
   };
 
   useEffect(() => {
@@ -155,18 +145,24 @@ export const MyRequestsPage = () => {
             </p>
           ) : (
             <div className="space-y-3">
-              {filteredRequests.map((complaint) => (
-                <div
-                  key={complaint.id}
-                  className="cursor-pointer rounded-lg border border-neutral-200 p-4 transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-[#02061780] dark:hover:bg-slate-900"
-                  onClick={() => navigate(`/complaints/${complaint.id}`)}
-                >
-                  <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-neutral-900 dark:text-slate-200">
-                          {getCategoryLabel(complaint.complaint_category)}
-                        </h3>
+              {filteredRequests.map((complaint) => {
+                const categoryMeta = getComplaintCategoryMeta(
+                  complaint.complaint_category,
+                );
+                const CategoryIcon = categoryMeta.icon;
+                return (
+                  <div
+                    key={complaint.id}
+                    className="cursor-pointer rounded-lg border border-neutral-200 p-4 transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-[#02061780] dark:hover:bg-slate-900"
+                    onClick={() => navigate(`/complaints/${complaint.id}`)}
+                  >
+                    <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex-1">
+                        <div className="mb-1 flex items-center gap-2">
+                          <h3 className="flex items-center gap-2 font-semibold text-neutral-900 dark:text-slate-200">
+                            <CategoryIcon size={15} className={categoryMeta.iconClass} />
+                            {categoryMeta.label}
+                          </h3>
                         <span
                           className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(
                             complaint.status,
@@ -218,8 +214,9 @@ export const MyRequestsPage = () => {
                       </p>
                     </div>
                   )}
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

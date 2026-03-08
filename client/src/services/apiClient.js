@@ -23,7 +23,7 @@ const apiClient = axios.create({
  */
 apiClient.interceptors.request.use(
   (requestConfig) => {
-    const token = localStorage.getItem(config.auth.tokenKey);
+    const token = sessionStorage.getItem(config.auth.tokenKey);
 
     console.log("[apiClient] Request to:", requestConfig.url);
     console.log("[apiClient] Token exists:", !!token);
@@ -32,7 +32,7 @@ apiClient.interceptors.request.use(
       requestConfig.headers.Authorization = `Bearer ${token}`;
       console.log("[apiClient] Token added to headers");
     } else {
-      console.warn("[apiClient] No token found in localStorage");
+      console.warn("[apiClient] No token found in sessionStorage");
     }
 
     return requestConfig;
@@ -67,7 +67,7 @@ apiClient.interceptors.response.use(
     ) {
       originalRequest._retry = true;
 
-      const refreshToken = localStorage.getItem(config.auth.refreshTokenKey);
+      const refreshToken = sessionStorage.getItem(config.auth.refreshTokenKey);
 
       if (refreshToken) {
         return apiClient
@@ -77,8 +77,8 @@ apiClient.interceptors.response.use(
               response.data.data;
 
             // Update tokens in storage
-            localStorage.setItem(config.auth.tokenKey, accessToken);
-            localStorage.setItem(config.auth.refreshTokenKey, newRefreshToken);
+            sessionStorage.setItem(config.auth.tokenKey, accessToken);
+            sessionStorage.setItem(config.auth.refreshTokenKey, newRefreshToken);
 
             // Update header
             originalRequest.headers.Authorization = `Bearer ${accessToken}`;
@@ -113,3 +113,4 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
+

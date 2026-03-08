@@ -174,6 +174,28 @@ router.get(
 );
 
 /**
+ * GET /api/requests/admin/workload/contractors
+ * Returns contractor load/capacity snapshot
+ */
+router.get(
+  "/admin/workload/contractors",
+  authenticateToken,
+  authorize(["ADMIN"]),
+  requestController.getContractorWorkloadSummary,
+);
+
+/**
+ * GET /api/requests/admin/queue/unassigned
+ * Returns unassigned complaint queue with reasons
+ */
+router.get(
+  "/admin/queue/unassigned",
+  authenticateToken,
+  authorize(["ADMIN"]),
+  requestController.getUnassignedQueue,
+);
+
+/**
  * POST /api/requests/admin/areas
  * Adds a city area in location master
  * Body: areaName, latitude (optional), longitude (optional)

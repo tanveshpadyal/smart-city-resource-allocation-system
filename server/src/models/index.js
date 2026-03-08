@@ -14,6 +14,7 @@ const ResourceAllocation = require("./ResourceAllocation")(
 const Provider = require("./Provider")(sequelize, DataTypes);
 const Service = require("./Service")(sequelize, DataTypes);
 const ProviderService = require("./ProviderService")(sequelize, DataTypes);
+const ContractorArea = require("./ContractorArea")(sequelize, DataTypes);
 
 // ============================================
 // USER ASSOCIATIONS
@@ -58,6 +59,24 @@ User.hasMany(Request, {
   as: "assignedComplaints",
 });
 
+User.hasMany(ContractorArea, {
+  foreignKey: "contractor_id",
+  as: "contractorAreas",
+});
+ContractorArea.belongsTo(User, {
+  foreignKey: "contractor_id",
+  as: "contractor",
+});
+
+Location.hasMany(ContractorArea, {
+  foreignKey: "area_id",
+  as: "areaContractors",
+});
+ContractorArea.belongsTo(Location, {
+  foreignKey: "area_id",
+  as: "area",
+});
+
 // ============================================
 // RESOURCE ASSOCIATIONS
 // ============================================
@@ -90,4 +109,5 @@ module.exports = {
   Provider,
   Service,
   ProviderService,
+  ContractorArea,
 };

@@ -1,5 +1,6 @@
 const { Op } = require("sequelize");
 const db = require("../models");
+const { reassignStaleComplaints } = require("./complaintAssignment");
 
 const SLA_HOURS = 48;
 const SLA_CHECK_INTERVAL_MS = 15 * 60 * 1000;
@@ -45,12 +46,18 @@ const startSlaCheckScheduler = () => {
     return null;
   }
 
-  const run = async () => {
+const run = async () => {
     try {
       const result = await updateSlaBreaches();
+      const reassignmentResult = await reassignStaleComplaints();
       if (result.breachedMarked > 0 || result.resolvedReset > 0) {
         console.log(
           `[SLA] Updated breaches: +${result.breachedMarked}, reset:${result.resolvedReset}`,
+        );
+      }
+      if (reassignmentResult.reassigned > 0) {
+        console.log(
+          `[Dispatch] Auto-reassigned stale complaints: ${reassignmentResult.reassigned}`,
         );
       }
     } catch (error) {

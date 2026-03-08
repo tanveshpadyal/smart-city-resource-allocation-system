@@ -7,6 +7,7 @@ const authUtils = require("../utils/auth");
 const db = require("../models");
 const { sanitizeAreas } = require("../services/complaintAssignment");
 const crypto = require("crypto");
+const { Op } = require("sequelize");
 
 const getGoogleClient = () => {
   try {
@@ -29,7 +30,7 @@ const sendResetEmail = async (email, resetUrl) => {
 
     if (!host || !user || !pass) {
       console.warn("[forgot-password] SMTP not configured. Reset URL:", resetUrl);
-      return;
+      return { delivered: false, reason: "SMTP_NOT_CONFIGURED" };
     }
 
     const transporter = nodemailer.createTransport({
@@ -46,9 +47,11 @@ const sendResetEmail = async (email, resetUrl) => {
       text: `Use this link to reset your password: ${resetUrl}`,
       html: `<p>Use this link to reset your password:</p><p><a href="${resetUrl}">${resetUrl}</a></p>`,
     });
+    return { delivered: true };
   } catch (error) {
     console.warn("[forgot-password] Could not send email:", error.message);
     console.warn("[forgot-password] Reset URL:", resetUrl);
+    return { delivered: false, reason: error.message };
   }
 };
 
@@ -369,6 +372,8 @@ const getCurrentUser = async (req, res) => {
         "status",
         "is_active",
         "isActive",
+        "max_active_complaints",
+        "last_assigned_at",
         "assignedAreas",
         "profile_photo",
       ],
@@ -497,7 +502,15 @@ const getActiveOperators = async (req, res) => {
         is_active: true,
         isActive: true,
       },
-      attributes: ["id", "name", "email", "assignedAreas", "isActive"],
+      attributes: [
+        "id",
+        "name",
+        "email",
+        "assignedAreas",
+        "isActive",
+        "max_active_complaints",
+        "last_assigned_at",
+      ],
       order: [["name", "ASC"]],
     });
 
@@ -530,6 +543,8 @@ const getAllUsers = async (req, res) => {
         "status",
         "is_active",
         "isActive",
+        "max_active_complaints",
+        "last_assigned_at",
         "assignedAreas",
         "createdAt",
       ],
@@ -557,8 +572,15 @@ const getAllUsers = async (req, res) => {
 const createOperator = async (req, res) => {
   try {
     const adminId = req.user?.userId;
-    const { name, email, password, passwordConfirm, assignedAreas = [] } =
-      req.body;
+    const {
+      name,
+      email,
+      password,
+      passwordConfirm,
+      assignedAreas = [],
+      max_active_complaints = 10,
+      is_available = true,
+    } = req.body;
 
     if (!name || !email || !password || !passwordConfirm) {
       return res.status(400).json({
@@ -615,9 +637,40 @@ const createOperator = async (req, res) => {
       auth_provider: "local",
       status: "active",
       is_active: true,
-      isActive: true,
+      isActive: Boolean(is_available),
+      max_active_complaints: Math.max(1, Number(max_active_complaints) || 10),
       assignedAreas: sanitizeAreas(assignedAreas),
     });
+
+    const normalizedAreas = sanitizeAreas(assignedAreas);
+    if (normalizedAreas.length) {
+      const locations = await db.Location.findAll({
+        where: db.sequelize.where(
+          db.sequelize.fn("LOWER", db.sequelize.col("zone_name")),
+          { [Op.in]: normalizedAreas },
+        ),
+        attributes: ["id", "zone_name"],
+      });
+      const byName = new Map(
+        locations.map((loc) => [String(loc.zone_name).trim().toLowerCase(), loc]),
+      );
+      const mappingRows = normalizedAreas
+        .map((name, idx) => {
+          const loc = byName.get(name);
+          if (!loc) return null;
+          return {
+            contractor_id: newOperator.id,
+            area_id: loc.id,
+            priority: idx + 1,
+            is_primary: idx === 0,
+            weight: 1,
+          };
+        })
+        .filter(Boolean);
+      if (mappingRows.length) {
+        await db.ContractorArea.bulkCreate(mappingRows);
+      }
+    }
 
     await db.AdminActivityLog.create({
       admin_id: adminId,
@@ -637,6 +690,7 @@ const createOperator = async (req, res) => {
         role: newOperator.role,
         assignedAreas: newOperator.assignedAreas,
         isActive: newOperator.isActive,
+        max_active_complaints: newOperator.max_active_complaints,
       },
     });
   } catch (error) {
@@ -752,8 +806,54 @@ const updateOperatorAreas = async (req, res) => {
     }
 
     const normalizedAreas = sanitizeAreas(assignedAreas);
-    operator.assignedAreas = normalizedAreas;
-    await operator.save();
+    const tx = await db.sequelize.transaction();
+    try {
+      operator.assignedAreas = normalizedAreas;
+      await operator.save({ transaction: tx });
+
+      const locations = normalizedAreas.length
+        ? await db.Location.findAll({
+            where: db.sequelize.where(
+              db.sequelize.fn("LOWER", db.sequelize.col("zone_name")),
+              { [Op.in]: normalizedAreas },
+            ),
+            attributes: ["id", "zone_name"],
+            transaction: tx,
+          })
+        : [];
+
+      const locationByName = new Map(
+        locations.map((loc) => [String(loc.zone_name).trim().toLowerCase(), loc]),
+      );
+
+      await db.ContractorArea.destroy({
+        where: { contractor_id: operator.id },
+        transaction: tx,
+      });
+
+      const mappingRows = normalizedAreas
+        .map((name, idx) => {
+          const loc = locationByName.get(name);
+          if (!loc) return null;
+          return {
+            contractor_id: operator.id,
+            area_id: loc.id,
+            priority: idx + 1,
+            is_primary: idx === 0,
+            weight: 1,
+          };
+        })
+        .filter(Boolean);
+
+      if (mappingRows.length) {
+        await db.ContractorArea.bulkCreate(mappingRows, { transaction: tx });
+      }
+
+      await tx.commit();
+    } catch (syncError) {
+      await tx.rollback();
+      throw syncError;
+    }
 
     await db.AdminActivityLog.create({
       admin_id: adminId,
@@ -984,6 +1084,8 @@ const forgotPassword = async (req, res) => {
     }
 
     const user = await db.User.findOne({ where: { email: email.toLowerCase() } });
+    let devResetUrl = null;
+    let emailDelivery = null;
     if (user) {
       const rawToken = crypto.randomBytes(32).toString("hex");
       const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
@@ -995,13 +1097,22 @@ const forgotPassword = async (req, res) => {
 
       const clientBase = process.env.CLIENT_URL || "http://localhost:5173";
       const resetUrl = `${clientBase}/reset-password/${rawToken}`;
-      await sendResetEmail(user.email, resetUrl);
+      emailDelivery = await sendResetEmail(user.email, resetUrl);
+      if (process.env.NODE_ENV !== "production" && (!emailDelivery || !emailDelivery.delivered)) {
+        devResetUrl = resetUrl;
+      }
     }
 
     return res.status(200).json({
       success: true,
       message:
         "If an account exists with that email, a reset link has been sent.",
+      data: devResetUrl
+        ? {
+            resetUrl: devResetUrl,
+            note: "Development fallback: SMTP not configured, use this link directly.",
+          }
+        : undefined,
     });
   } catch (error) {
     console.error("Forgot password error:", error);

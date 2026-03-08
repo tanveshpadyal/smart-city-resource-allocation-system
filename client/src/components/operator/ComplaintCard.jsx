@@ -1,6 +1,7 @@
 import { Clock3, MapPin, ArrowRight, CheckCircle2, PlayCircle } from "lucide-react";
 import { Button } from "../common";
 import { formatters } from "../../utils/formatters";
+import { getComplaintCategoryMeta } from "../../utils/complaintCategory";
 
 const statusStyles = {
   ASSIGNED: "bg-blue-100 text-blue-700 dark:bg-indigo-500/20 dark:text-indigo-300",
@@ -14,17 +15,6 @@ const progressByStatus = {
   RESOLVED: 100,
 };
 
-const getCategoryLabel = (category) => {
-  const labels = {
-    ROAD: "Road Issue",
-    GARBAGE: "Garbage / Waste",
-    WATER: "Water Issue",
-    LIGHT: "Street Light",
-    OTHER: "Other",
-  };
-  return labels[category] || category;
-};
-
 const ComplaintCard = ({
   complaint,
   onStartWork,
@@ -35,13 +25,16 @@ const ComplaintCard = ({
   const progress = progressByStatus[complaint.status] ?? 20;
   const area =
     complaint.location_data?.area || complaint.Location?.zone_name || "Unknown area";
+  const categoryMeta = getComplaintCategoryMeta(complaint.complaint_category);
+  const CategoryIcon = categoryMeta.icon;
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-md shadow-slate-200/70 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-300/70 dark:border-slate-800 dark:bg-[#02061780] dark:shadow-black/40 dark:hover:shadow-black/55">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">
-            {getCategoryLabel(complaint.complaint_category)}
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">
+            <CategoryIcon size={13} className={categoryMeta.iconClass} />
+            {categoryMeta.label}
           </span>
           <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass}`}>
             {complaint.status.replace("_", " ")}

@@ -16,7 +16,10 @@ import TopUtilityBar from "./TopUtilityBar";
 
 export const OperatorLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("operatorSidebarCollapsed") === "true";
+  });
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -29,6 +32,12 @@ export const OperatorLayout = ({ children }) => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("operatorSidebarCollapsed", String(collapsed));
+    }
+  }, [collapsed]);
 
   const menuItems = [
     { label: "Dashboard", href: "/operator/dashboard", icon: LayoutDashboard },

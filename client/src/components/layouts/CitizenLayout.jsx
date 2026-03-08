@@ -24,7 +24,10 @@ import TopUtilityBar from "./TopUtilityBar";
 
 export const CitizenLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("citizenSidebarCollapsed") === "true";
+  });
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -42,6 +45,12 @@ export const CitizenLayout = ({ children }) => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("citizenSidebarCollapsed", String(collapsed));
+    }
+  }, [collapsed]);
 
   const menuItems = [
     { label: "Dashboard", href: "/citizen/dashboard", icon: LayoutDashboard },
@@ -76,7 +85,7 @@ export const CitizenLayout = ({ children }) => {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 border-r border-slate-200/70 bg-white/95 shadow-lg shadow-slate-300/40 backdrop-blur transition-all duration-[1000ms] ease-in-out lg:translate-x-0 dark:border-slate-800/70 dark:bg-[#020617]/90 dark:shadow-black/40 ${
+        className={`fixed inset-y-0 left-0 z-40 border-r border-slate-700/70 bg-gradient-to-b from-[#0b1220] via-[#111827] to-[#1e293b] shadow-xl shadow-black/45 backdrop-blur transition-all duration-[1000ms] ease-in-out lg:translate-x-0 dark:border-indigo-900/40 dark:bg-gradient-to-b dark:from-[#0b1220] dark:via-[#111827] dark:to-[#1e293b] dark:shadow-black/60 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } ${collapsed ? "w-20" : "w-72"}`}
       >
@@ -99,17 +108,17 @@ export const CitizenLayout = ({ children }) => {
                 </div>
               )}
               <div>
-                <p className="text-sm font-semibold text-slate-900 dark:text-slate-200">
+                <p className="text-sm font-semibold text-slate-100 dark:text-slate-100">
                   {user?.name || "Citizen"}
                 </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Citizen</p>
+                <p className="text-xs text-slate-300 dark:text-slate-300">Citizen</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={toggleTheme}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-600/70 text-slate-300 hover:bg-slate-700/60 dark:border-slate-600/70 dark:text-slate-300 dark:hover:bg-slate-700/60"
                 aria-label="Toggle theme"
               >
                 {isDark ? <Sun size={16} /> : <Moon size={16} />}
@@ -117,7 +126,7 @@ export const CitizenLayout = ({ children }) => {
               <button
                 type="button"
                 onClick={() => setCollapsed((prev) => !prev)}
-                className="hidden h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900 lg:inline-flex"
+                className="hidden h-9 w-9 items-center justify-center rounded-lg border border-slate-600/70 text-slate-300 hover:bg-slate-700/60 dark:border-slate-600/70 dark:text-slate-300 dark:hover:bg-slate-700/60 lg:inline-flex"
                 aria-label="Collapse sidebar"
               >
                 {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
@@ -125,7 +134,7 @@ export const CitizenLayout = ({ children }) => {
               <button
                 type="button"
                 onClick={() => setSidebarOpen(false)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900 lg:hidden"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-600/70 text-slate-300 hover:bg-slate-700/60 dark:border-slate-600/70 dark:text-slate-300 dark:hover:bg-slate-700/60 lg:hidden"
                 aria-label="Close sidebar"
               >
                 <X size={16} />
@@ -140,8 +149,8 @@ export const CitizenLayout = ({ children }) => {
                 to={item.href}
                 className={`group relative flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all ${
                   isActive(item.href)
-                    ? "bg-indigo-100 text-indigo-700 shadow-sm ring-1 ring-indigo-200 dark:bg-indigo-500/25 dark:text-indigo-300 dark:ring-indigo-500/40"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-slate-100"
+                    ? "bg-indigo-600 text-white shadow-md ring-1 ring-indigo-500/60 dark:bg-indigo-500 dark:text-white dark:ring-indigo-400/60"
+                    : "text-slate-300 hover:bg-white/10 hover:text-white dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
                 }`}
                 onClick={() => setSidebarOpen(false)}
               >
@@ -152,8 +161,8 @@ export const CitizenLayout = ({ children }) => {
                   size={18}
                   className={`shrink-0 ${
                     isActive(item.href)
-                      ? "text-indigo-600 dark:text-indigo-300"
-                      : "text-slate-400 group-hover:text-slate-700 dark:text-slate-500 dark:group-hover:text-slate-300"
+                    ? "text-white"
+                    : "text-slate-400 group-hover:text-white dark:text-slate-400 dark:group-hover:text-white"
                   }`}
                 />
                 <span
