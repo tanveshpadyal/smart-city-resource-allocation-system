@@ -12,27 +12,114 @@ import authService from "../../services/authService";
 import { formatters } from "../../utils/formatters";
 import { getComplaintCategoryMeta } from "../../utils/complaintCategory";
 
+const DEFAULT_LIMIT = 50;
+const FILTERED_LIMIT = 500;
+
+const normalizeText = (value) => String(value || "").trim().toLowerCase();
+
+const applyLocalFilters = (items, filters) => {
+  const search = normalizeText(filters.search);
+
+  return items.filter((complaint) => {
+    if (filters.status && complaint.status !== filters.status) {
+      return false;
+    }
+
+    if (filters.category && complaint.complaint_category !== filters.category) {
+      return false;
+    }
+
+    if (
+      filters.operator &&
+      String(complaint.assigned_to || "") !== String(filters.operator)
+    ) {
+      return false;
+    }
+
+    if (filters.startDate || filters.endDate) {
+      const requestedAt = complaint.requested_at ? new Date(complaint.requested_at) : null;
+      if (!requestedAt || Number.isNaN(requestedAt.getTime())) {
+        return false;
+      }
+
+      if (filters.startDate) {
+        const start = new Date(filters.startDate);
+        start.setHours(0, 0, 0, 0);
+        if (requestedAt < start) {
+          return false;
+        }
+      }
+
+      if (filters.endDate) {
+        const end = new Date(filters.endDate);
+        end.setHours(23, 59, 59, 999);
+        if (requestedAt > end) {
+          return false;
+        }
+      }
+    }
+
+    if (search) {
+      const haystack = [
+        complaint.description,
+        complaint.complaint_category,
+        complaint.User?.name,
+        complaint.assignedOperator?.name,
+        complaint.location_data?.area,
+        complaint.location_data?.address,
+        complaint.Location?.zone_name,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      if (!haystack.includes(search)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+};
+
 export const PendingComplaintsPage = () => {
   const navigate = useNavigate();
   const { requests, loading, error, getAllRequests, assignComplaint } =
     useRequest();
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const defaultFilters = {
+  const [filters, setFilters] = useState({
     status: searchParams.get("status") || "",
     category: searchParams.get("category") || "",
     operator: searchParams.get("operator") || "",
     startDate: searchParams.get("startDate") || "",
     endDate: searchParams.get("endDate") || "",
     search: searchParams.get("search") || "",
-  };
-  const [filters, setFilters] = useState(defaultFilters);
+  });
 
   const [operators, setOperators] = useState([]);
   const [selectedOperators, setSelectedOperators] = useState({});
   const [assigningId, setAssigningId] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
   const [exporting, setExporting] = useState(false);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    limit: DEFAULT_LIMIT,
+    offset: Number(searchParams.get("offset") || 0),
+  });
+
+  const hasActiveFilters = useMemo(
+    () => Object.values(filters).some((value) => String(value || "").trim() !== ""),
+    [filters],
+  );
+
+  const complaints = useMemo(() => {
+    const list = Array.isArray(requests) ? requests : [];
+    return applyLocalFilters(list, filters);
+  }, [requests, filters]);
+
+  const currentPage = Math.floor(pagination.offset / pagination.limit) + 1;
+  const totalPages = Math.max(1, Math.ceil(pagination.total / pagination.limit));
 
   const getStatusButtonStyles = (status) => {
     switch (status) {
@@ -48,113 +135,105 @@ export const PendingComplaintsPage = () => {
     }
   };
 
-  const loadData = useCallback(async () => {
+  const buildApiFilters = useCallback(() => {
+    const usingWideFetch = hasActiveFilters;
+    const params = {
+      limit: usingWideFetch ? FILTERED_LIMIT : pagination.limit,
+      offset: usingWideFetch ? 0 : pagination.offset,
+    };
+
+    if (filters.status) params.status = filters.status;
+    if (filters.category) params.category = filters.category;
+    if (filters.operator) params.operator = filters.operator;
+    if (filters.startDate) params.startDate = filters.startDate;
+    if (filters.endDate) params.endDate = filters.endDate;
+    if (filters.search.trim()) params.search = filters.search.trim();
+
+    return params;
+  }, [filters, hasActiveFilters, pagination.limit, pagination.offset]);
+
+  const loadOperators = useCallback(async () => {
     try {
-      const [allRes, operatorsRes] = await Promise.all([
-        getAllRequests(),
-        authService.getOperators(),
-      ]);
-
-      const allComplaints = allRes?.data || allRes || [];
+      const operatorsRes = await authService.getOperators();
       const activeOperators = operatorsRes?.data || operatorsRes || [];
-
-      const defaultSelection = {};
-      allComplaints.forEach((complaint) => {
-        if (complaint.status === "PENDING" && activeOperators[0]?.id) {
-          defaultSelection[complaint.id] = activeOperators[0].id;
-        }
-      });
-
-      setSelectedOperators(defaultSelection);
       setOperators(activeOperators);
     } catch {
-      // Error is handled by hook state
+      setOperators([]);
     }
-  }, [getAllRequests]);
+  }, []);
+
+  const loadComplaints = useCallback(async () => {
+    try {
+      const response = await getAllRequests(buildApiFilters());
+      const apiRows = Array.isArray(response?.data) ? response.data : [];
+      const page = response?.pagination || {};
+
+      if (hasActiveFilters) {
+        const filteredCount = applyLocalFilters(apiRows, filters).length;
+        setPagination((prev) => ({
+          ...prev,
+          total: filteredCount,
+          offset: 0,
+        }));
+      } else {
+        setPagination((prev) => ({
+          ...prev,
+          total: Number(page.total) || 0,
+          limit: Number(page.limit) || prev.limit,
+          offset: Number(page.offset) || 0,
+        }));
+      }
+
+      setSelectedOperators((prev) => {
+        const next = { ...prev };
+        const defaultOperatorId = operators[0]?.id;
+
+        for (const complaint of apiRows) {
+          if (
+            complaint.status === "PENDING" &&
+            !next[complaint.id] &&
+            defaultOperatorId
+          ) {
+            next[complaint.id] = defaultOperatorId;
+          }
+        }
+
+        return next;
+      });
+    } catch {
+      // Error already managed in useRequest state
+    }
+  }, [buildApiFilters, filters, getAllRequests, hasActiveFilters, operators]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadOperators();
+  }, [loadOperators]);
+
+  useEffect(() => {
+    loadComplaints();
+  }, [loadComplaints]);
 
   useEffect(() => {
     const params = {};
+
     Object.entries(filters).forEach(([key, value]) => {
-      if (value) {
-        params[key] = value;
-      }
+      if (value) params[key] = value;
     });
+
+    if (!hasActiveFilters && pagination.offset > 0) {
+      params.offset = String(pagination.offset);
+    }
+
     setSearchParams(params, { replace: true });
-  }, [filters, setSearchParams]);
-
-  const complaints = useMemo(() => {
-    const source = Array.isArray(requests) ? requests : [];
-    const searchText = filters.search.trim().toLowerCase();
-
-    return source.filter((complaint) => {
-      if (filters.status && complaint.status !== filters.status) {
-        return false;
-      }
-
-      if (
-        filters.category &&
-        complaint.complaint_category !== filters.category
-      ) {
-        return false;
-      }
-
-      if (
-        filters.operator &&
-        String(complaint.assigned_to || "") !== String(filters.operator)
-      ) {
-        return false;
-      }
-
-      const requestedAt = complaint.requested_at
-        ? new Date(complaint.requested_at)
-        : null;
-
-      if (filters.startDate && requestedAt) {
-        const start = new Date(filters.startDate);
-        start.setHours(0, 0, 0, 0);
-        if (requestedAt < start) {
-          return false;
-        }
-      }
-
-      if (filters.endDate && requestedAt) {
-        const end = new Date(filters.endDate);
-        end.setHours(23, 59, 59, 999);
-        if (requestedAt > end) {
-          return false;
-        }
-      }
-
-      if (searchText) {
-        const haystack = [
-          complaint.description,
-          complaint.complaint_category,
-          complaint.User?.name,
-          complaint.AssignedOperator?.name,
-          complaint.Operator?.name,
-          complaint.location_data?.area,
-          complaint.location_data?.address,
-          complaint.Location?.zone_name,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-
-        if (!haystack.includes(searchText)) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }, [requests, filters]);
+  }, [filters, hasActiveFilters, pagination.offset, setSearchParams]);
 
   const selectClassName =
     "w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 pr-9 text-sm font-medium text-slate-700 shadow-sm transition-all duration-200 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-primary-400 dark:focus:ring-primary-500/25";
+
+  const updateFilter = (key, value) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+    setPagination((prev) => ({ ...prev, offset: 0 }));
+  };
 
   const handleAssign = async (complaintId) => {
     const operatorId = selectedOperators[complaintId];
@@ -164,9 +243,7 @@ export const PendingComplaintsPage = () => {
       setAssigningId(complaintId);
       await assignComplaint(complaintId, operatorId);
       setSuccessMessage("Complaint assigned successfully.");
-      await loadData();
-    } catch {
-      // Error is handled by hook state
+      await loadComplaints();
     } finally {
       setAssigningId(null);
     }
@@ -206,6 +283,24 @@ export const PendingComplaintsPage = () => {
       endDate: "",
       search: "",
     });
+    setPagination((prev) => ({ ...prev, offset: 0 }));
+  };
+
+  const goToPreviousPage = () => {
+    setPagination((prev) => ({
+      ...prev,
+      offset: Math.max(prev.offset - prev.limit, 0),
+    }));
+  };
+
+  const goToNextPage = () => {
+    setPagination((prev) => ({
+      ...prev,
+      offset:
+        prev.offset + prev.limit >= prev.total
+          ? prev.offset
+          : prev.offset + prev.limit,
+    }));
   };
 
   return (
@@ -223,21 +318,14 @@ export const PendingComplaintsPage = () => {
               View all complaints, filter by status, and assign pending ones
             </p>
           </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleExport}
-            loading={exporting}
-          >
+          <Button variant="secondary" size="sm" onClick={handleExport} loading={exporting}>
             Export as CSV
           </Button>
         </div>
 
         <div className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-slate-800 dark:bg-[#020617]">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-neutral-900 dark:text-slate-200">
-              Filters
-            </h3>
+            <h3 className="text-sm font-semibold text-neutral-900 dark:text-slate-200">Filters</h3>
             <Button
               variant="secondary"
               size="sm"
@@ -251,9 +339,7 @@ export const PendingComplaintsPage = () => {
             <div className="relative">
               <select
                 value={filters.status}
-                onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, status: e.target.value }))
-                }
+                onChange={(e) => updateFilter("status", e.target.value)}
                 className={selectClassName}
               >
                 <option value="">All Status</option>
@@ -270,9 +356,7 @@ export const PendingComplaintsPage = () => {
             <div className="relative">
               <select
                 value={filters.category}
-                onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, category: e.target.value }))
-                }
+                onChange={(e) => updateFilter("category", e.target.value)}
                 className={selectClassName}
               >
                 <option value="">All Categories</option>
@@ -290,9 +374,7 @@ export const PendingComplaintsPage = () => {
             <div className="relative">
               <select
                 value={filters.operator}
-                onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, operator: e.target.value }))
-                }
+                onChange={(e) => updateFilter("operator", e.target.value)}
                 className={selectClassName}
               >
                 <option value="">All Contractors</option>
@@ -310,23 +392,17 @@ export const PendingComplaintsPage = () => {
             <Input
               placeholder="Search keyword..."
               value={filters.search}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, search: e.target.value }))
-              }
+              onChange={(e) => updateFilter("search", e.target.value)}
             />
             <Input
               type="date"
               value={filters.startDate}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, startDate: e.target.value }))
-              }
+              onChange={(e) => updateFilter("startDate", e.target.value)}
             />
             <Input
               type="date"
               value={filters.endDate}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, endDate: e.target.value }))
-              }
+              onChange={(e) => updateFilter("endDate", e.target.value)}
             />
           </div>
         </div>
@@ -341,12 +417,10 @@ export const PendingComplaintsPage = () => {
         {loading ? (
           <InlineSpinner />
         ) : error ? (
-          <ErrorAlert message={error} onRetry={loadData} />
+          <ErrorAlert message={error} onRetry={loadComplaints} />
         ) : complaints.length === 0 ? (
           <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-slate-800 dark:bg-[#020617]">
-            <p className="text-neutral-600 dark:text-slate-400">
-              No complaints found.
-            </p>
+            <p className="text-neutral-600 dark:text-slate-400">No complaints found.</p>
           </div>
         ) : (
           <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-slate-800 dark:bg-[#020617]">
@@ -356,26 +430,25 @@ export const PendingComplaintsPage = () => {
                   complaint.complaint_category,
                 );
                 const CategoryIcon = categoryMeta.icon;
+
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={complaint.id}
-                    className="cursor-pointer rounded-lg border border-neutral-200 p-4 shadow-sm shadow-slate-200/60 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-slate-300/60 dark:border-slate-800 dark:bg-[#02061780] dark:shadow-black/30 dark:hover:shadow-black/45"
+                    className="w-full rounded-lg border border-neutral-200 p-4 text-left shadow-sm shadow-slate-200/60 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-slate-300/60 focus:outline-none focus:ring-2 focus:ring-primary-300 dark:border-slate-800 dark:bg-[#02061780] dark:shadow-black/30 dark:hover:shadow-black/45"
                     onClick={() => navigate(`/complaints/${complaint.id}`)}
                   >
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                       <div className="flex-1">
                         <p className="flex items-center gap-2 text-sm font-semibold text-neutral-900 dark:text-slate-200">
-                          <CategoryIcon
-                            size={15}
-                            className={categoryMeta.iconClass}
-                          />
+                          <CategoryIcon size={15} className={categoryMeta.iconClass} />
                           {categoryMeta.label}
                         </p>
                         <p className="mt-1 text-sm text-neutral-700 dark:text-slate-300">
                           {complaint.description}
                         </p>
                         <p className="mt-2 text-xs text-neutral-500 dark:text-slate-400">
-                          Reported by {complaint.User?.name || "Citizen"} on{" "}
+                          Reported by {complaint.User?.name || "Citizen"} on {" "}
                           {formatters.formatDate(complaint.requested_at)}
                         </p>
                       </div>
@@ -383,15 +456,15 @@ export const PendingComplaintsPage = () => {
                       {complaint.status === "PENDING" ? (
                         <div
                           className="flex w-full gap-2 md:w-auto"
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(event) => event.stopPropagation()}
                         >
                           <select
                             className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm transition-all duration-200 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-indigo-400 dark:focus:ring-indigo-500/30 md:w-64"
                             value={selectedOperators[complaint.id] || ""}
-                            onChange={(e) =>
+                            onChange={(event) =>
                               setSelectedOperators((prev) => ({
                                 ...prev,
-                                [complaint.id]: e.target.value,
+                                [complaint.id]: event.target.value,
                               }))
                             }
                           >
@@ -414,30 +487,54 @@ export const PendingComplaintsPage = () => {
                         </div>
                       ) : (
                         <div className="flex w-full flex-col items-stretch gap-2 md:w-auto md:items-end">
-                          <button
-                            type="button"
-                            className={`rounded-lg px-3 py-2 text-sm font-semibold ${getStatusButtonStyles(
+                          <span
+                            className={`rounded-lg px-3 py-2 text-center text-sm font-semibold ${getStatusButtonStyles(
                               complaint.status,
                             )}`}
-                            disabled
                           >
                             {complaint.status?.replace("_", " ") || "UNKNOWN"}
-                          </button>
-                          {(complaint.Operator?.name ||
-                            complaint.AssignedOperator?.name) && (
+                          </span>
+                          {complaint.assignedOperator?.name && (
                             <p className="text-xs text-neutral-500 dark:text-slate-400">
-                              Assigned to{" "}
-                              {complaint.Operator?.name ||
-                                complaint.AssignedOperator?.name}
+                              Assigned to {complaint.assignedOperator.name}
                             </p>
                           )}
                         </div>
                       )}
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
+
+            {!hasActiveFilters && (
+              <div className="mt-6 flex flex-col gap-3 border-t border-neutral-200 pt-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-neutral-600 dark:text-slate-400">
+                  Showing {complaints.length} of {pagination.total} complaints
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={goToPreviousPage}
+                    disabled={pagination.offset === 0}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm text-neutral-600 dark:text-slate-300">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={goToNextPage}
+                    disabled={pagination.offset + pagination.limit >= pagination.total}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

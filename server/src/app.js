@@ -27,18 +27,23 @@ const app = express();
 // ============================================
 // SECURITY & CORS MIDDLEWARE
 // ============================================
-/*app.use(
+const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
-    credentials: true, // Allow cookies if using session-based auth
+    origin(origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error("CORS origin not allowed"));
+    },
+    credentials: true,
     optionsSuccessStatus: 200,
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
-*/
-app.use(cors({
-  origin: "*",
-  credentials: true
-}));
 
 // Security headers
 app.use((req, res, next) => {

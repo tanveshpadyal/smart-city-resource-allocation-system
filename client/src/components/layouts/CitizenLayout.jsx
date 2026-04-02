@@ -54,8 +54,8 @@ export const CitizenLayout = ({ children }) => {
 
   const menuItems = [
     { label: "Dashboard", href: "/citizen/dashboard", icon: LayoutDashboard },
-    { label: "Create Request", href: "/citizen/create-request", icon: PlusCircle },
-    { label: "My Requests", href: "/citizen/my-requests", icon: ClipboardList },
+    { label: "Create Complaint", href: "/citizen/create-request", icon: PlusCircle },
+    { label: "My Complaints", href: "/citizen/my-requests", icon: ClipboardList },
   ];
 
   const isActive = (href) => location.pathname === href;

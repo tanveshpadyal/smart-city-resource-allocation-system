@@ -10,46 +10,7 @@ const requestService = {
    * Create a new resource request
    */
   createRequest: async (requestData) => {
-    try {
-      console.log("[requestService.createRequest] Sending data:", requestData);
-      const response = await apiClient.post("/requests", requestData);
-      console.log("[requestService.createRequest] Response:", response.data);
-      return response.data;
-    } catch (error) {
-      console.error("[requestService.createRequest] Request failed:", error);
-      console.error(
-        "[requestService.createRequest] Error status:",
-        error.response?.status,
-      );
-      console.error(
-        "[requestService.createRequest] Error data:",
-        error.response?.data,
-      );
-      console.error(
-        "[requestService.createRequest] Error message:",
-        error.response?.data?.error ||
-          error.response?.data?.message ||
-          error.message,
-      );
-      throw error;
-    }
-  },
-
-  /**
-   * Get all requests for the current user (citizen)
-   */
-  getMyRequests: async (filters = {}) => {
-    const response = await apiClient.get("/requests/me", { params: filters });
-    return response.data;
-  },
-
-  /**
-   * Get all pending requests (operator/admin)
-   */
-  getPendingRequests: async (filters = {}) => {
-    const response = await apiClient.get("/requests/pending/list", {
-      params: filters,
-    });
+    const response = await apiClient.post("/requests", requestData);
     return response.data;
   },
 

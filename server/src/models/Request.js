@@ -12,7 +12,6 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
       },
-      // Foreign keys
       user_id: {
         type: DataTypes.UUID,
         allowNull: false,
@@ -28,7 +27,6 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
         comment: "Inline location object for complaint",
       },
-      // Request details
       complaint_category: {
         type: DataTypes.ENUM("ROAD", "GARBAGE", "WATER", "LIGHT", "OTHER"),
         allowNull: false,
@@ -47,18 +45,15 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         defaultValue: 0,
       },
-      // Priority determines allocation speed
       priority: {
         type: DataTypes.ENUM("LOW", "MEDIUM", "HIGH", "EMERGENCY"),
         defaultValue: "MEDIUM",
       },
-      // Request description
       description: {
         type: DataTypes.TEXT,
         allowNull: true,
         comment: "Reason for request, specific needs, etc.",
       },
-      // Status tracking
       status: {
         type: DataTypes.ENUM("PENDING", "ASSIGNED", "IN_PROGRESS", "RESOLVED"),
         defaultValue: "PENDING",
@@ -88,13 +83,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DATE,
         allowNull: true,
       },
-      // Operator's remark when resolving
       operator_remark: {
         type: DataTypes.TEXT,
         allowNull: true,
         comment: "Operator's notes/remarks about the issue resolution",
       },
-      // Timestamps
       requested_at: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
@@ -120,13 +113,11 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: false,
         comment: "Whether complaint exceeded SLA window before resolution",
       },
-      // SLA tracking
       image: {
         type: DataTypes.TEXT,
         allowNull: true,
         comment: "URL or base64 of complaint image",
       },
-      // Metadata
       metadata: {
         type: DataTypes.JSONB,
         defaultValue: {},
@@ -137,7 +128,6 @@ module.exports = (sequelize, DataTypes) => {
       indexes: [
         { fields: ["user_id"] },
         { fields: ["location_id"] },
-        { fields: ["location_data"] },
         { fields: ["assigned_to"] },
         { fields: ["assignment_strategy"] },
         { fields: ["location_bucket"] },
@@ -146,12 +136,12 @@ module.exports = (sequelize, DataTypes) => {
         { fields: ["slaBreached"] },
         { fields: ["requested_at"] },
         { fields: ["user_id", "status"] },
-        { fields: ["status"] },
+        { fields: ["status", "complaint_category", "requested_at"] },
+        { fields: ["assigned_to", "status", "requested_at"] },
       ],
     },
   );
 
-  // Association: Request belongs to assigned operator
   Request.associate = function (models) {
     Request.belongsTo(models.User, {
       foreignKey: "user_id",
@@ -172,6 +162,28 @@ module.exports = (sequelize, DataTypes) => {
       as: "ParentComplaint",
     });
   };
+
+  Request.beforeUpdate((request) => {
+    if (!request.changed("status")) return;
+
+    const previousStatus = request.previous("status");
+    const nextStatus = request.get("status");
+
+    if (!previousStatus || previousStatus === nextStatus) return;
+
+    const allowedTransitions = {
+      PENDING: ["ASSIGNED"],
+      ASSIGNED: ["IN_PROGRESS"],
+      IN_PROGRESS: ["RESOLVED"],
+      RESOLVED: [],
+    };
+
+    if (!allowedTransitions[previousStatus]?.includes(nextStatus)) {
+      throw new Error(
+        `Invalid complaint status transition: ${previousStatus} -> ${nextStatus}`,
+      );
+    }
+  });
 
   return Request;
 };

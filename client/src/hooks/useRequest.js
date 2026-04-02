@@ -15,25 +15,14 @@ export const useRequest = () => {
     setLoading(true);
     setError(null);
     try {
-      console.log(
-        "[useRequest.createRequest] Calling API with data:",
-        requestData,
-      );
       const response = await requestService.createRequest(requestData);
-      console.log("[useRequest.createRequest] Success response:", response);
       return response;
     } catch (err) {
-      console.error("[useRequest.createRequest] Error:", err);
-      console.error(
-        "[useRequest.createRequest] Error response data:",
-        err.response?.data,
-      );
       const errorMessage =
         err.response?.data?.details ||
         err.response?.data?.error ||
         err.response?.data?.message ||
         "Failed to create request";
-      console.log("[useRequest.createRequest] Setting error:", errorMessage);
       setError(errorMessage);
       throw err;
     } finally {

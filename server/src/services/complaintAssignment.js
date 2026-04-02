@@ -136,6 +136,73 @@ const sortRanked = (a, b) => {
   return a.contractorId.localeCompare(b.contractorId);
 };
 
+const lockAvailableContractor = async (contractorId, transaction) => {
+  if (!transaction) return null;
+
+  return db.User.findOne({
+    where: {
+      id: contractorId,
+      role: "OPERATOR",
+      status: "active",
+      is_active: true,
+      isActive: true,
+    },
+    transaction,
+    lock: transaction.LOCK.UPDATE,
+    skipLocked: true,
+    attributes: [
+      "id",
+      "name",
+      "max_active_complaints",
+      "last_assigned_at",
+    ],
+  });
+};
+
+const chooseLockedCandidate = async (ranked, transaction) => {
+  if (!transaction) {
+    return ranked[0] || null;
+  }
+
+  for (const candidate of ranked) {
+    const lockedContractor = await lockAvailableContractor(
+      candidate.contractorId,
+      transaction,
+    );
+    if (!lockedContractor) {
+      continue;
+    }
+
+    const latestActiveCount = await db.Request.count({
+      where: {
+        assigned_to: candidate.contractorId,
+        status: { [Op.in]: ACTIVE_COMPLAINT_STATUSES },
+      },
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+
+    const capacity = Number(lockedContractor.max_active_complaints) || 10;
+    if (latestActiveCount >= capacity) {
+      continue;
+    }
+
+    return {
+      ...candidate,
+      activeCount: latestActiveCount,
+      capacity,
+      utilization: latestActiveCount / capacity,
+      score:
+        (latestActiveCount / capacity) * 1000 +
+        latestActiveCount * 10 +
+        candidate.priority -
+        candidate.weight,
+    };
+  }
+
+  return null;
+};
+
 const findBestContractorForArea = async (areaName, transaction) => {
   const area = await getAreaRecord(areaName, transaction);
   if (!area) return null;
@@ -160,7 +227,11 @@ const findBestContractorForArea = async (areaName, transaction) => {
     .sort(sortRanked);
 
   if (!ranked.length) return null;
-  return { area, selected: ranked[0], ranked };
+
+  const selected = await chooseLockedCandidate(ranked, transaction);
+  if (!selected) return null;
+
+  return { area, selected, ranked };
 };
 
 const buildAssignmentReason = (selected) =>
@@ -214,29 +285,54 @@ const reassignStaleComplaints = async () => {
 
   let reassigned = 0;
   for (const complaint of stale) {
-    const area =
-      complaint.location_data?.area || complaint.location_data?.address || "";
-    const match = await findBestContractorForArea(area);
-    if (!match) continue;
-    if (match.selected.contractorId === complaint.assigned_to) continue;
+    const transaction = await db.sequelize.transaction();
 
-    complaint.assigned_to = match.selected.contractorId;
-    complaint.assignment_strategy = "ESCALATED";
-    complaint.assignment_score = match.selected.score;
-    complaint.assignment_reason = `reassigned: ${buildAssignmentReason(
-      match.selected,
-    )}`;
-    complaint.assigned_at = new Date();
-    complaint.reassignment_cooldown_until = new Date(
-      Date.now() + 15 * 60 * 1000,
-    );
-    await complaint.save();
+    try {
+      const lockedComplaint = await db.Request.findOne({
+        where: { id: complaint.id },
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
 
-    await db.User.update(
-      { last_assigned_at: new Date() },
-      { where: { id: match.selected.contractorId } },
-    );
-    reassigned += 1;
+      if (!lockedComplaint || lockedComplaint.status !== "ASSIGNED") {
+        await transaction.rollback();
+        continue;
+      }
+
+      const area =
+        lockedComplaint.location_data?.area ||
+        lockedComplaint.location_data?.address ||
+        "";
+
+      const match = await findBestContractorForArea(area, transaction);
+      if (!match || match.selected.contractorId === lockedComplaint.assigned_to) {
+        await transaction.rollback();
+        continue;
+      }
+
+      lockedComplaint.assigned_to = match.selected.contractorId;
+      lockedComplaint.assignment_strategy = "ESCALATED";
+      lockedComplaint.assignment_score = match.selected.score;
+      lockedComplaint.assignment_reason = `reassigned: ${buildAssignmentReason(
+        match.selected,
+      )}`;
+      lockedComplaint.assigned_at = new Date();
+      lockedComplaint.reassignment_cooldown_until = new Date(
+        Date.now() + 15 * 60 * 1000,
+      );
+      await lockedComplaint.save({ transaction });
+
+      await db.User.update(
+        { last_assigned_at: new Date() },
+        { where: { id: match.selected.contractorId }, transaction },
+      );
+
+      await transaction.commit();
+      reassigned += 1;
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 
   return { reassigned, thresholdMinutes: REASSIGN_START_SLA_MINUTES };

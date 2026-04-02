@@ -27,9 +27,6 @@ const { Op } = Sequelize;
 const createRequest = async (req, res) => {
   try {
     const userId = req.user?.userId;
-    console.log("[createRequest] userId:", userId);
-    console.log("[createRequest] body:", JSON.stringify(req.body));
-
     const {
       complaint_category,
       location_id,
@@ -259,7 +256,6 @@ const createRequest = async (req, res) => {
 const getMyRequests = async (req, res) => {
   try {
     const userId = req.user?.userId;
-    console.log("[getMyRequests] userId:", userId);
 
     const complaints = await db.Request.findAll({
       where: { user_id: userId },
@@ -278,7 +274,6 @@ const getMyRequests = async (req, res) => {
       order: [["requested_at", "DESC"]],
     });
 
-    console.log("[getMyRequests] Found complaints:", complaints.length);
     return res.status(200).json({
       success: true,
       data: complaints,
@@ -611,11 +606,14 @@ const updateComplaintStatus = async (req, res) => {
  * Admin assigns complaint to an operator
  */
 const assignComplaint = async (req, res) => {
+  const transaction = await db.sequelize.transaction();
+
   try {
     const { requestId } = req.params;
     const { operator_id } = req.body;
 
     if (!operator_id) {
+      await transaction.rollback();
       return res.status(400).json({
         success: false,
         error: "Missing required field: operator_id",
@@ -623,14 +621,20 @@ const assignComplaint = async (req, res) => {
       });
     }
 
-    // Verify operator exists and is active
-    const operator = await db.User.findByPk(operator_id);
+    const operator = await db.User.findOne({
+      where: { id: operator_id },
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+      skipLocked: false,
+    });
+
     if (
       !operator ||
       operator.role !== "OPERATOR" ||
       !operator.is_active ||
       !operator.isActive
     ) {
+      await transaction.rollback();
       return res.status(400).json({
         success: false,
         error: "Operator not found or is inactive",
@@ -638,9 +642,15 @@ const assignComplaint = async (req, res) => {
       });
     }
 
-    // Get complaint
-    const complaint = await db.Request.findByPk(requestId);
+    const complaint = await db.Request.findOne({
+      where: { id: requestId },
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+      skipLocked: false,
+    });
+
     if (!complaint) {
+      await transaction.rollback();
       return res.status(404).json({
         success: false,
         error: "Complaint not found",
@@ -648,8 +658,8 @@ const assignComplaint = async (req, res) => {
       });
     }
 
-    // Can only assign PENDING complaints
     if (complaint.status !== "PENDING") {
+      await transaction.rollback();
       return res.status(400).json({
         success: false,
         error: `Cannot assign ${complaint.status} complaint`,
@@ -662,9 +672,13 @@ const assignComplaint = async (req, res) => {
         assigned_to: operator_id,
         status: { [Op.in]: ACTIVE_COMPLAINT_STATUSES },
       },
+      transaction,
+      lock: transaction.LOCK.UPDATE,
     });
+
     const capacity = Number(operator.max_active_complaints) || 10;
     if (activeCount >= capacity) {
+      await transaction.rollback();
       return res.status(400).json({
         success: false,
         error: `Contractor capacity reached (${activeCount}/${capacity})`,
@@ -672,32 +686,42 @@ const assignComplaint = async (req, res) => {
       });
     }
 
-    // Update complaint
     complaint.assigned_to = operator_id;
     complaint.status = "ASSIGNED";
     complaint.assigned_at = new Date();
     complaint.assignment_strategy = "MANUAL";
     complaint.assignment_score = activeCount / capacity;
-    complaint.assignment_reason = `manual override by admin (load ${activeCount}/${capacity})`;
-    await complaint.save();
-    await operator.update({ last_assigned_at: new Date() });
+    complaint.assignment_reason =
+      `manual override by admin (load ${activeCount}/${capacity})`;
+    await complaint.save({ transaction });
 
-    // Log assignment
-    await db.ActionLog.create({
-      entity_type: "Complaint",
-      entity_id: complaint.id,
-      action: "COMPLAINT_ASSIGNED",
-      actor_id: req.user?.userId,
-      metadata: { operator_id },
-    });
+    await operator.update({ last_assigned_at: new Date() }, { transaction });
 
-    await db.AdminActivityLog.create({
-      admin_id: req.user?.userId,
-      action_type: "ASSIGN",
-      entity_type: "Complaint",
-      entity_id: complaint.id,
-      metadata: { operator_id },
-    });
+    await db.ActionLog.create(
+      {
+        entity_type: "Complaint",
+        entity_id: complaint.id,
+        action: "COMPLAINT_ASSIGNED",
+        metadata: {
+          actor_id: req.user?.userId,
+          operator_id,
+        },
+      },
+      { transaction },
+    );
+
+    await db.AdminActivityLog.create(
+      {
+        admin_id: req.user?.userId,
+        action_type: "ASSIGN",
+        entity_type: "Complaint",
+        entity_id: complaint.id,
+        metadata: { operator_id },
+      },
+      { transaction },
+    );
+
+    await transaction.commit();
 
     return res.status(200).json({
       success: true,
@@ -705,6 +729,7 @@ const assignComplaint = async (req, res) => {
       data: complaint.toJSON(),
     });
   } catch (error) {
+    await transaction.rollback();
     console.error("Error in assignComplaint:", error);
     return res.status(500).json({
       success: false,
@@ -714,10 +739,6 @@ const assignComplaint = async (req, res) => {
   }
 };
 
-/**
- * START COMPLAINT RESOLUTION
- * Operator starts working on complaint
- */
 const startComplaintResolution = async (req, res) => {
   try {
     const operatorId = req.user?.userId;
@@ -868,7 +889,19 @@ const resolveComplaint = async (req, res) => {
  */
 const getAllComplaints = async (req, res) => {
   try {
-    const { status, category, limit = 50, offset = 0 } = req.query;
+    const {
+      status,
+      category,
+      operator,
+      startDate,
+      endDate,
+      search,
+      limit = 50,
+      offset = 0,
+    } = req.query;
+
+    const parsedLimit = Math.min(Math.max(Number.parseInt(limit, 10) || 50, 1), 200);
+    const parsedOffset = Math.max(Number.parseInt(offset, 10) || 0, 0);
 
     const where = {};
 
@@ -880,6 +913,34 @@ const getAllComplaints = async (req, res) => {
       where.complaint_category = category;
     }
 
+    if (operator) {
+      where.assigned_to = operator;
+    }
+
+    if (startDate || endDate) {
+      where.requested_at = {};
+      if (startDate) {
+        where.requested_at[Op.gte] = new Date(startDate);
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        where.requested_at[Op.lte] = end;
+      }
+    }
+
+    if (search && String(search).trim()) {
+      const term = `%${String(search).trim()}%`;
+      where[Op.or] = [
+        { description: { [Op.iLike]: term } },
+        { complaint_category: { [Op.iLike]: term } },
+        db.sequelize.where(
+          db.sequelize.cast(db.sequelize.col("Request.location_data"), "text"),
+          { [Op.iLike]: term },
+        ),
+      ];
+    }
+
     const complaints = await db.Request.findAndCountAll({
       where,
       include: [
@@ -889,14 +950,19 @@ const getAllComplaints = async (req, res) => {
         },
         {
           model: db.User,
+          attributes: ["id", "name", "email"],
+        },
+        {
+          model: db.User,
           as: "assignedOperator",
           attributes: ["id", "name", "email"],
           required: false,
         },
       ],
       order: [["requested_at", "DESC"]],
-      limit: parseInt(limit),
-      offset: parseInt(offset),
+      limit: parsedLimit,
+      offset: parsedOffset,
+      distinct: true,
     });
 
     return res.status(200).json({
@@ -904,8 +970,8 @@ const getAllComplaints = async (req, res) => {
       data: complaints.rows,
       pagination: {
         total: complaints.count,
-        limit: parseInt(limit),
-        offset: parseInt(offset),
+        limit: parsedLimit,
+        offset: parsedOffset,
       },
     });
   } catch (error) {
@@ -918,10 +984,6 @@ const getAllComplaints = async (req, res) => {
   }
 };
 
-/**
- * GET TIME-BASED STATS (ADMIN ONLY)
- * Returns daily counts, average resolution time, and pending aging buckets
- */
 const getTimeStats = async (req, res) => {
   try {
     const now = new Date();

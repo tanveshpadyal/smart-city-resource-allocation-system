@@ -10,21 +10,32 @@ const bcrypt = require("bcryptjs");
 // JWT TOKEN MANAGEMENT
 // ============================================
 
+const getRequiredEnv = (key) => {
+  const value = process.env[key];
+  if (!value || !value.trim()) {
+    throw new Error(`${key} is required and must be set`);
+  }
+  return value;
+};
+
 /**
  * Generate JWT tokens with proper expiry strategy
  * - Access Token: Short-lived (15 minutes) - used for API requests
  * - Refresh Token: Long-lived (7 days) - used to get new access tokens
  */
 const createTokens = (userId, role) => {
+  const accessSecret = getRequiredEnv("JWT_ACCESS_SECRET");
+  const refreshSecret = getRequiredEnv("JWT_REFRESH_SECRET");
+
   const accessToken = jwt.sign(
     {
       userId,
       role,
       type: "access",
     },
-    process.env.JWT_ACCESS_SECRET || "your-access-secret-key",
+    accessSecret,
     {
-      expiresIn: "15m", // Short expiry for security
+      expiresIn: "15m",
       issuer: "smart-city-api",
       audience: "smart-city-client",
     },
@@ -35,9 +46,9 @@ const createTokens = (userId, role) => {
       userId,
       type: "refresh",
     },
-    process.env.JWT_REFRESH_SECRET || "your-refresh-secret-key",
+    refreshSecret,
     {
-      expiresIn: "7d", // Longer expiry for refresh purposes
+      expiresIn: "7d",
       issuer: "smart-city-api",
     },
   );
@@ -51,16 +62,11 @@ const createTokens = (userId, role) => {
  */
 const verifyAccessToken = (token) => {
   try {
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_ACCESS_SECRET || "your-access-secret-key",
-      {
-        issuer: "smart-city-api",
-        audience: "smart-city-client",
-      },
-    );
+    const decoded = jwt.verify(token, getRequiredEnv("JWT_ACCESS_SECRET"), {
+      issuer: "smart-city-api",
+      audience: "smart-city-client",
+    });
 
-    // Ensure it's an access token
     if (decoded.type !== "access") {
       return null;
     }
@@ -78,15 +84,10 @@ const verifyAccessToken = (token) => {
  */
 const verifyRefreshToken = (token) => {
   try {
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_REFRESH_SECRET || "your-refresh-secret-key",
-      {
-        issuer: "smart-city-api",
-      },
-    );
+    const decoded = jwt.verify(token, getRequiredEnv("JWT_REFRESH_SECRET"), {
+      issuer: "smart-city-api",
+    });
 
-    // Ensure it's a refresh token
     if (decoded.type !== "refresh") {
       return null;
     }
@@ -120,7 +121,7 @@ const decodeToken = (token) => {
  */
 const hashPassword = async (plainPassword) => {
   try {
-    const saltRounds = 12; // Industry standard
+    const saltRounds = 12;
     const hash = await bcrypt.hash(plainPassword, saltRounds);
     return hash;
   } catch (error) {
@@ -143,19 +144,13 @@ const verifyPassword = async (plainPassword, passwordHash) => {
 
 /**
  * Check if password meets security requirements
- * Requirements:
- * - Minimum 8 characters
- * - At least one uppercase letter
- * - At least one lowercase letter
- * - At least one number
- * - At least one special character
  */
 const isStrongPassword = (password) => {
   const minLength = 8;
   const hasUppercase = /[A-Z]/.test(password);
   const hasLowercase = /[a-z]/.test(password);
   const hasNumbers = /\d/.test(password);
-  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]/.test(password);
 
   return (
     password.length >= minLength &&
@@ -175,13 +170,10 @@ const isValidEmail = (email) => {
 };
 
 module.exports = {
-  // JWT operations
   createTokens,
   verifyAccessToken,
   verifyRefreshToken,
   decodeToken,
-
-  // Password operations
   hashPassword,
   verifyPassword,
   isStrongPassword,

@@ -222,10 +222,10 @@ const login = async (req, res) => {
 
     // ========== LOG LOGIN (Optional: for security auditing) ==========
     await db.ActionLog.create({
-      user_id: user.id,
-      action_type: "LOGIN",
-      description: `User ${user.email} logged in`,
-      status: "SUCCESS",
+      entity_type: "Auth",
+      entity_id: user.id,
+      action: "LOGIN",
+      metadata: { email: user.email },
     });
 
     // ========== RESPONSE ==========
@@ -334,10 +334,10 @@ const logout = async (req, res) => {
 
     // ========== LOG LOGOUT (Optional: for security auditing) ==========
     await db.ActionLog.create({
-      user_id: userId,
-      action_type: "LOGOUT",
-      description: "User logged out",
-      status: "SUCCESS",
+      entity_type: "Auth",
+      entity_id: userId,
+      action: "LOGOUT",
+      metadata: { user_id: userId },
     });
 
     return res.status(200).json({
@@ -468,10 +468,10 @@ const changePassword = async (req, res) => {
 
     // ========== LOG PASSWORD CHANGE ==========
     await db.ActionLog.create({
-      user_id: userId,
-      action_type: "PASSWORD_CHANGE",
-      description: "User changed password",
-      status: "SUCCESS",
+      entity_type: "Auth",
+      entity_id: userId,
+      action: "PASSWORD_CHANGE",
+      metadata: { user_id: userId },
     });
 
     return res.status(200).json({
@@ -933,10 +933,10 @@ const updateProfilePhoto = async (req, res) => {
 
     try {
       await db.ActionLog.create({
-        user_id: user.id,
-        action_type: "PROFILE_PHOTO_UPDATED",
-        description: "User updated profile photo",
-        status: "SUCCESS",
+        entity_type: "User",
+        entity_id: user.id,
+        action: "PROFILE_PHOTO_UPDATED",
+        metadata: { user_id: user.id },
       });
     } catch (logError) {
       // Log failures should not block profile update.

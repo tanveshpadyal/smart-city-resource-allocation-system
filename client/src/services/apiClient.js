@@ -8,7 +8,6 @@ import axios from "axios";
 import { config } from "../config";
 import useAuthStore from "../store/authStore";
 
-// Create axios instance
 const apiClient = axios.create({
   baseURL: config.api.baseURL,
   timeout: config.api.timeout,
@@ -17,36 +16,18 @@ const apiClient = axios.create({
   },
 });
 
-/**
- * REQUEST INTERCEPTOR
- * Adds authentication token to every request
- */
 apiClient.interceptors.request.use(
   (requestConfig) => {
-    const token = sessionStorage.getItem(config.auth.tokenKey);
-
-    console.log("[apiClient] Request to:", requestConfig.url);
-    console.log("[apiClient] Token exists:", !!token);
-
+    const token = localStorage.getItem(config.auth.tokenKey);
     if (token) {
       requestConfig.headers.Authorization = `Bearer ${token}`;
-      console.log("[apiClient] Token added to headers");
-    } else {
-      console.warn("[apiClient] No token found in sessionStorage");
     }
 
     return requestConfig;
   },
-  (error) => {
-    console.error("[apiClient] Request interceptor error:", error);
-    return Promise.reject(error);
-  },
+  (error) => Promise.reject(error),
 );
 
-/**
- * RESPONSE INTERCEPTOR
- * Handles errors and token refresh logic
- */
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -59,15 +40,10 @@ apiClient.interceptors.response.use(
       statusCode === 401 ||
       (statusCode === 403 && errorCode === "INVALID_TOKEN");
 
-    // Handle 401 (Unauthorized) - Token might be expired
-    if (
-      isTokenExpiredError &&
-      !originalRequest._retry &&
-      !isAuthEndpoint
-    ) {
+    if (isTokenExpiredError && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
 
-      const refreshToken = sessionStorage.getItem(config.auth.refreshTokenKey);
+      const refreshToken = localStorage.getItem(config.auth.refreshTokenKey);
 
       if (refreshToken) {
         return apiClient
@@ -76,36 +52,22 @@ apiClient.interceptors.response.use(
             const { accessToken, refreshToken: newRefreshToken } =
               response.data.data;
 
-            // Update tokens in storage
-            sessionStorage.setItem(config.auth.tokenKey, accessToken);
-            sessionStorage.setItem(config.auth.refreshTokenKey, newRefreshToken);
+            localStorage.setItem(config.auth.tokenKey, accessToken);
+            localStorage.setItem(config.auth.refreshTokenKey, newRefreshToken);
 
-            // Update header
             originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-
-            // Retry original request
             return apiClient(originalRequest);
           })
           .catch((refreshError) => {
-            // Refresh failed, logout user
             useAuthStore.getState().logout();
-
-            // Redirect to login
             window.location.href = config.routes.public.login;
-
             return Promise.reject(refreshError);
           });
-      } else {
-        // No refresh token, logout
-        useAuthStore.getState().logout();
-        window.location.href = config.routes.public.login;
-        return Promise.reject(error);
       }
-    }
 
-    // Handle 403 (Forbidden) - User doesn't have permission
-    if (error.response?.status === 403 && !isAuthEndpoint) {
-      window.location.href = "/unauthorized";
+      useAuthStore.getState().logout();
+      window.location.href = config.routes.public.login;
+      return Promise.reject(error);
     }
 
     return Promise.reject(error);
@@ -113,4 +75,3 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
-

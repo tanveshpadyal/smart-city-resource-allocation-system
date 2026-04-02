@@ -20,13 +20,13 @@ const useAuthStore = create(
       isAuthenticated: false,
 
       /**
-       * Initialize auth state from sessionStorage (on app load)
+       * Initialize auth state from localStorage (on app load)
        */
       initializeAuth: async () => {
         try {
-          const storedUser = sessionStorage.getItem(config.auth.userKey);
-          const storedAccessToken = sessionStorage.getItem(config.auth.tokenKey);
-          const storedRefreshToken = sessionStorage.getItem(
+          const storedUser = localStorage.getItem(config.auth.userKey);
+          const storedAccessToken = localStorage.getItem(config.auth.tokenKey);
+          const storedRefreshToken = localStorage.getItem(
             config.auth.refreshTokenKey,
           );
 
@@ -60,8 +60,8 @@ const useAuthStore = create(
                     refreshToken: newRefreshToken,
                   } = refreshResponse.data;
 
-                  sessionStorage.setItem(config.auth.tokenKey, newAccessToken);
-                  sessionStorage.setItem(
+                  localStorage.setItem(config.auth.tokenKey, newAccessToken);
+                  localStorage.setItem(
                     config.auth.refreshTokenKey,
                     newRefreshToken,
                   );
@@ -114,9 +114,9 @@ const useAuthStore = create(
             error: null,
           });
 
-          sessionStorage.setItem(config.auth.userKey, JSON.stringify(userData));
-          sessionStorage.setItem(config.auth.tokenKey, data.accessToken);
-          sessionStorage.setItem(config.auth.refreshTokenKey, data.refreshToken);
+          localStorage.setItem(config.auth.userKey, JSON.stringify(userData));
+          localStorage.setItem(config.auth.tokenKey, data.accessToken);
+          localStorage.setItem(config.auth.refreshTokenKey, data.refreshToken);
 
           return response;
         } catch (error) {
@@ -151,9 +151,9 @@ const useAuthStore = create(
             error: null,
           });
 
-          sessionStorage.setItem(config.auth.userKey, JSON.stringify(userData));
-          sessionStorage.setItem(config.auth.tokenKey, data.accessToken);
-          sessionStorage.setItem(config.auth.refreshTokenKey, data.refreshToken);
+          localStorage.setItem(config.auth.userKey, JSON.stringify(userData));
+          localStorage.setItem(config.auth.tokenKey, data.accessToken);
+          localStorage.setItem(config.auth.refreshTokenKey, data.refreshToken);
 
           return response;
         } catch (error) {
@@ -186,9 +186,9 @@ const useAuthStore = create(
             error: null,
           });
 
-          sessionStorage.setItem(config.auth.userKey, JSON.stringify(userData));
-          sessionStorage.setItem(config.auth.tokenKey, data.accessToken);
-          sessionStorage.setItem(config.auth.refreshTokenKey, data.refreshToken);
+          localStorage.setItem(config.auth.userKey, JSON.stringify(userData));
+          localStorage.setItem(config.auth.tokenKey, data.accessToken);
+          localStorage.setItem(config.auth.refreshTokenKey, data.refreshToken);
 
           return response;
         } catch (error) {
@@ -217,10 +217,10 @@ const useAuthStore = create(
             error: null,
           });
 
-          sessionStorage.removeItem(config.auth.userKey);
-          sessionStorage.removeItem(config.auth.tokenKey);
-          sessionStorage.removeItem(config.auth.refreshTokenKey);
-          sessionStorage.removeItem(config.auth.expirationKey);
+          localStorage.removeItem(config.auth.userKey);
+          localStorage.removeItem(config.auth.tokenKey);
+          localStorage.removeItem(config.auth.refreshTokenKey);
+          localStorage.removeItem(config.auth.expirationKey);
         } catch (error) {
           console.error("Logout error:", error);
           set({ error: "Logout failed", isLoading: false });
@@ -246,8 +246,8 @@ const useAuthStore = create(
             error: null,
           });
 
-          sessionStorage.setItem(config.auth.tokenKey, newAccessToken);
-          sessionStorage.setItem(config.auth.refreshTokenKey, newRefreshToken);
+          localStorage.setItem(config.auth.tokenKey, newAccessToken);
+          localStorage.setItem(config.auth.refreshTokenKey, newRefreshToken);
 
           return response;
         } catch (error) {
@@ -278,7 +278,7 @@ const useAuthStore = create(
         set((state) => ({
           user: { ...state.user, ...userData },
         }));
-        sessionStorage.setItem(config.auth.userKey, JSON.stringify(get().user));
+        localStorage.setItem(config.auth.userKey, JSON.stringify(get().user));
       },
 
       clearError: () => {
@@ -297,7 +297,7 @@ const useAuthStore = create(
     }),
     {
       name: "auth-store",
-      storage: createJSONStorage(() => sessionStorage),
+      storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,
