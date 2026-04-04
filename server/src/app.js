@@ -13,6 +13,8 @@ require("dotenv").config({
 
 const express = require("express");
 const cors = require("cors");
+const http = require("http");
+const { initSocketServer } = require("./sockets");
 
 // Import routes
 const authRoutes = require("./routes/auth");
@@ -23,6 +25,7 @@ const adminLogsRoutes = require("./routes/adminLogs");
 const operatorRoutes = require("./routes/operator");
 
 const app = express();
+const server = http.createServer(app);
 
 // ============================================
 // SECURITY & CORS MIDDLEWARE
@@ -130,7 +133,9 @@ const startServer = async () => {
     console.log("Database connected successfully");
     startSlaCheckScheduler();
 
-    app.listen(PORT, () => {
+    initSocketServer(server);
+
+    server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
     });

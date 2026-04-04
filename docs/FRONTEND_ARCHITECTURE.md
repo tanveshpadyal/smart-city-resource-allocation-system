@@ -1,531 +1,436 @@
-# PHASE 8 — FRONTEND ARCHITECTURE DOCUMENTATION
+# Frontend Architecture Documentation
 
-## 1. PAGE STRUCTURE BY ROLE
+## 1. Frontend Stack
 
-### **Citizen Pages** (Request Creator & Tracker)
-
-| Page           | Path                      | Purpose                                           |
-| -------------- | ------------------------- | ------------------------------------------------- |
-| Login          | `/login`                  | User authentication                               |
-| Register       | `/register`               | User account creation                             |
-| Dashboard      | `/citizen/dashboard`      | Overview: stats, recent requests, quick actions   |
-| Create Request | `/citizen/create-request` | Form to submit resource requests                  |
-| My Requests    | `/citizen/my-requests`    | List of all personal requests with filtering      |
-| Request Detail | `/citizen/request/:id`    | Detailed view with allocation status and tracking |
-
-**Citizen User Flow:**
-
-```
-Login → Dashboard (stats) → Create Request OR View My Requests → Track status
-```
-
-### **Operator Pages** (Resource Dispatcher & Handler)
-
-| Page                 | Path                             | Purpose                                                       |
-| -------------------- | -------------------------------- | ------------------------------------------------------------- |
-| Dashboard            | `/operator/dashboard`            | Real-time overview: pending queue, KPIs, active allocations   |
-| Pending Requests     | `/operator/pending-requests`     | Prioritized request queue (EMERGENCY→LOW) with actions        |
-| Active Allocations   | `/operator/active-allocations`   | In-progress allocations with live location tracking           |
-| Allocation Details   | `/operator/allocation/:id`       | Detailed view: update status, view request, suggest resources |
-| Resource Suggestions | `/operator/resource-suggestions` | AI-suggested optimal allocations for manual review            |
-
-**Operator User Flow:**
-
-```
-Dashboard → Pending Requests Queue → Select Request → Auto/Manual Allocate →
-Allocation Details → Mark In Transit → Mark Delivered
-```
-
-### **Admin Pages** (System Oversight & Management)
-
-| Page       | Path                | Purpose                                                            |
-| ---------- | ------------------- | ------------------------------------------------------------------ |
-| Dashboard  | `/admin/dashboard`  | System analytics: fulfillment rate, SLA compliance, response times |
-| Users      | `/admin/users`      | User management: create, edit, delete, role assignment             |
-| Resources  | `/admin/resources`  | Resource inventory management and availability                     |
-| Audit Logs | `/admin/audit-logs` | Activity log with filtering and search                             |
-| Reports    | `/admin/reports`    | Generate system reports (performance, compliance)                  |
-| Settings   | `/admin/settings`   | System configuration and preferences                               |
-
-**Admin User Flow:**
-
-```
-Dashboard (analytics) → View Audit Logs → Manage Users → Configure Resources → Generate Reports
-```
-
-### **Shared Pages**
-
-| Page         | Path            | Purpose              |
-| ------------ | --------------- | -------------------- |
-| Unauthorized | `/unauthorized` | Access denied (403)  |
-| Not Found    | `/*`            | Page not found (404) |
+- `React 19`
+- `Vite`
+- `React Router`
+- `Zustand` for auth persistence
+- `Axios` via shared `apiClient`
+- `Leaflet` / `react-leaflet` for map-based complaint input and visualizations
+- `Recharts` for admin analytics
 
 ---
 
-## 2. COMPONENT BREAKDOWN
+## 2. Current Route Structure
 
-### **Common Components** (`src/components/common/`)
+### Public Routes
 
-#### UI Primitives
+| Page | Path | Purpose |
+| --- | --- | --- |
+| Landing | `/` | Entry page |
+| Login | `/login` | User authentication |
+| Register | `/register` | Citizen registration |
+| Forgot Password | `/forgot-password` | Password recovery request |
+| Reset Password | `/reset-password/:token` | Password reset flow |
+| Unauthorized | `/unauthorized` | 403 screen |
+| Not Found | `/*` | 404 screen |
 
-- **Spinner.jsx** — Loading indicator (PageSpinner, InlineSpinner, Spinner variations)
-- **Button.jsx** — Styled button (variants: primary, secondary, danger, success, outline, ghost; sizes: sm, md, lg)
-- **Input.jsx** — Form input with label, validation error display
-- **Input.jsx** (extended) — Textarea, Select components
-- **Badge.jsx** — Status badges with automatic variant mapping (StatusBadge, PriorityBadge, RoleBadge)
-- **Alert.jsx** — Error, Success, Warning alerts with auto-dismiss and retry options
+### Citizen Routes
 
-### **Layout Components** (`src/components/layouts/`)
+| Page | Path | Purpose |
+| --- | --- | --- |
+| Dashboard | `/citizen/dashboard` | Citizen overview |
+| Create Complaint | `/citizen/create-request` | Submit new complaint |
+| My Complaints | `/citizen/my-requests` | List/filter citizen complaints |
 
-- **MainLayout.jsx** — Public layout with header, navigation, footer (for /login, /register)
-- **CitizenLayout.jsx** — Sidebar nav (Dashboard, Create Request, My Requests), user profile, logout
-- **OperatorLayout.jsx** — Sidebar nav (Dashboard, Pending Requests, Active Allocations, Suggestions), urgent alert badge
-- **AdminLayout.jsx** — Sidebar nav (Dashboard, Users, Resources, Audit Logs, Reports, Settings)
+### Operator Routes
 
-### **Route Guards** (`src/components/`)
+| Page | Path | Purpose |
+| --- | --- | --- |
+| Dashboard | `/operator/dashboard` | Operator overview |
+| Complaints | `/operator/complaints` | Assigned complaints and actions |
+| Profile | `/operator/profile` | Provider/operator profile |
+| Complaint Detail | `/operator/complaint/:id` | Operator complaint view |
 
-- **ProtectedRoute.jsx** — Guards by authentication (redirects to /login if not authenticated)
-- **RoleGuard.jsx** — Guards by role (redirects to /unauthorized if role not in requiredRoles array)
+### Admin Routes
 
-### **Card Components** (`src/components/cards/`) — _Queued for implementation_
+| Page | Path | Purpose |
+| --- | --- | --- |
+| Dashboard | `/admin/dashboard` | KPIs, charts, heatmaps, overdue queue |
+| Pending Complaints | `/admin/pending-complaints` | Assignment workflow |
+| Users | `/admin/users` | User and operator administration |
+| Activity Logs | `/admin/activity-logs` | Admin audit history |
+| Add Operator | `/admin/add-operator` | Operator creation workflow |
 
-- **RequestCard.jsx** — Compact request summary with status badge
-- **AllocationCard.jsx** — Compact allocation summary with status and distance
-- **ResourceCard.jsx** — Resource availability with quantity and location
-- **StatsCard.jsx** — Metric display for dashboards (KPI card)
+### Shared Protected Route
 
-### **Form Components** (`src/components/forms/`) — _Queued for implementation_
-
-- **RequestForm.jsx** — Create/edit resource request form
-- **ResourceForm.jsx** — Allocate resource to request form
-- **UserForm.jsx** — Create/edit user form for admin
-
-### **Table Components** (`src/components/tables/`) — _Queued for implementation_
-
-- **RequestsTable.jsx** — Sortable, paginated table of requests
-- **AllocationsTable.jsx** — Sortable, paginated table of allocations
-- **UsersTable.jsx** — User management table with edit/delete actions
-- **AuditTable.jsx** — Activity log table with timestamps and action descriptions
-
-### **Chart Components** (`src/components/charts/`) — _Queued for implementation_
-
-- **RequestMetrics.jsx** — Pie/bar chart: requests by status (pending, fulfilled, cancelled)
-- **ResponseTime.jsx** — Line chart: average response time trend over time
-- **ResourceUtil.jsx** — Gauge chart: resource utilization percentage
-- **SLACompliance.jsx** — Progress bar: SLA target achievement percentage
+| Page | Path | Purpose |
+| --- | --- | --- |
+| Complaint Timeline / Detail | `/complaints/:id` | Role-aware complaint detail page |
 
 ---
 
-## 3. STATE FLOW ARCHITECTURE
+## 3. Role-Based Navigation
 
-```
-┌─ App (BrowserRouter)
-│
-├─ Authentication Flow
-│  ├─ useAuthStore (Zustand)
-│  │  ├─ State: user, accessToken, refreshToken, isAuthenticated, error, isLoading
-│  │  └─ Actions: login, register, logout, refreshAccessToken, changePassword
-│  │
-│  └─ apiClient.js (Axios instance)
-│     ├─ Request interceptor: Inject Authorization header with bearer token
-│     ├─ Response interceptor (401): Call /auth/refresh, update tokens, retry original request
-│     └─ Response interceptor (403): Redirect to /unauthorized
-│
-├─ Request Management
-│  ├─ useRequest() hook
-│  │  ├─ State: requests[], loading, error
-│  │  ├─ Actions: createRequest, getMyRequests, getPendingRequests, getRequest, updateRequest, cancelRequest
-│  │  └─ Error handling: Try/catch with human-readable messages
-│  │
-│  └─ Services: requestService.js (API wrapper functions)
-│
-├─ Allocation Management
-│  ├─ useAllocation() hook
-│  │  ├─ State: allocations[], loading, error
-│  │  ├─ Actions: manualAllocate, autoAllocate, suggestResources, getAllocation, markInTransit, markDelivered
-│  │  └─ Error handling: Try/catch with human-readable messages
-│  │
-│  └─ Services: allocationService.js (API wrapper functions)
-│
-└─ Component Local State
-   ├─ UI State: loading (boolean), error (string), successMessage (string)
-   ├─ Form State: formData (object), errors (object)
-   ├─ Filter State: filters (object), filteredData (array)
-   └─ Selection State: selectedItem (object)
+### Citizen UX
 
-Data Flow:
-User Interaction → Component State → API Call (via service) → Response interceptor (token refresh if needed) → Update Store → Re-render
+```text
+Login/Register
+  -> Citizen Dashboard
+  -> Create Complaint
+  -> My Complaints
+  -> Complaint Detail / Timeline
 ```
 
-**State Management Principles:**
+### Operator UX
 
-1. **Zustand** for global auth (persistent to localStorage)
-2. **React hooks** for component-level request/allocation data
-3. **Local useState** for UI state (modals, filters, pagination)
-4. **Axios interceptors** for automatic token refresh on 401
-
----
-
-## 4. ERROR & LOADING HANDLING
-
-### **Error Pattern**
-
-```jsx
-const { data, loading, error, setError } = useRequest();
-
-useEffect(() => {
-  (async () => {
-    try {
-      setLoading(true);
-      const result = await fetchData();
-      setData(result);
-    } catch (err) {
-      setError(getErrorMessage(err)); // Human-readable message from utils/errors.js
-    } finally {
-      setLoading(false);
-    }
-  })();
-}, []);
+```text
+Login
+  -> Operator Dashboard
+  -> Complaints List
+  -> Complaint Detail
+  -> Start / Update / Resolve
+  -> Profile / Provider Services
 ```
 
-### **Error Messages** (`src/utils/errors.js`)
+### Admin UX
 
-| Category   | Message                 | Trigger                    |
-| ---------- | ----------------------- | -------------------------- |
-| Auth       | `SESSION_EXPIRED`       | Token invalid/expired      |
-| Auth       | `NOT_AUTHORIZED`        | 403 response               |
-| Request    | `REQUEST_CREATE_FAILED` | 400/500 on create          |
-| Allocation | `NO_RESOURCES`          | No matching resource found |
-| Network    | `NETWORK_ERROR`         | Connection lost            |
-| Network    | `NETWORK_TIMEOUT`       | Request >30s               |
-
-### **Loading UI Components**
-
-- **PageSpinner** — Full-page loader with centered spinner + text
-- **InlineSpinner** — Inline loading state within card/section
-- **Button loading prop** — Spinner inside button during submission
-
-### **Error UI Components**
-
-- **ErrorAlert** — Displays error message with optional "Retry" and "Dismiss" buttons
-- **WarningAlert** — Non-critical warnings
-- **SuccessAlert** — Auto-dismiss success message (5s)
-- **Error Boundary** — Catches component render errors (implement if needed)
-
-### **Toast Notifications** (Planned)
-
-- Success: "Request created successfully!" (auto-dismiss 5s)
-- Error: "Failed to allocate resource" (sticky with retry button)
-- Info: "Loading pending requests..." (sticky until loaded)
-
----
-
-## 5. ROLE-BASED UI PROTECTION
-
-### **Route Level**
-
-```jsx
-// In App.jsx routes
-<Route
-  path="/operator/dashboard"
-  element={
-    <RoleGuard requiredRoles={["OPERATOR", "ADMIN"]}>
-      <OperatorDashboard />
-    </RoleGuard>
-  }
-/>
-```
-
-**Route Protection Matrix:**
-| Route | Public | Citizen | Operator | Admin |
-|-------|--------|---------|----------|-------|
-| /login | ✅ | ⚠️ (redirect) | ⚠️ (redirect) | ⚠️ (redirect) |
-| /citizen/_ | ❌ | ✅ | ❌ | ❌ |
-| /operator/_ | ❌ | ❌ | ✅ | ✅ |
-| /admin/\* | ❌ | ❌ | ❌ | ✅ |
-
-### **Component Level**
-
-```jsx
-// Conditional rendering
-{
-  user?.role === "ADMIN" && <AdminSettings />;
-}
-
-// Based on hook helper
-{
-  hasRole("OPERATOR") && <AllocationForm />;
-}
-
-// Multi-role check
-{
-  hasAnyRole(["OPERATOR", "ADMIN"]) && <PendingQueue />;
-}
-```
-
-### **Action Level**
-
-```jsx
-// Show/hide buttons based on role and state
-{
-  canAllocate && isOperator && (
-    <Button onClick={allocate}>Allocate Resource</Button>
-  );
-}
-```
-
-### **Middleware-Style Protection**
-
-```jsx
-export const ProtectedRoute = ({ children, requiredRoles }) => {
-  const { isAuthenticated, isLoading, user } = useAuth();
-
-  if (isLoading) return <PageSpinner />;
-  if (!isAuthenticated) return <Navigate to="/login" />;
-  if (!requiredRoles.includes(user?.role))
-    return <Navigate to="/unauthorized" />;
-
-  return children;
-};
+```text
+Login
+  -> Admin Dashboard
+  -> Pending Complaints
+  -> Assign Operators
+  -> Users / Add Operator
+  -> Activity Logs
 ```
 
 ---
 
-## 6. DASHBOARD & ANALYTICS APPROACH
+## 4. Major Frontend Modules
 
-### **Citizen Dashboard** (`/citizen/dashboard`)
+### 4.1 Authentication
 
-**Purpose:** Quick overview of personal request status and ability to create new requests
+Files:
 
-| **Metric**      | **Component** | **Data Source**                       | **Calculation**       |
-| --------------- | ------------- | ------------------------------------- | --------------------- |
-| Total Requests  | StatsCard     | requests.length                       | Count of all requests |
-| Pending         | StatsCard     | requests.filter(s='PENDING').length   | Count                 |
-| Fulfilled       | StatsCard     | requests.filter(s='FULFILLED').length | Count                 |
-| Cancelled       | StatsCard     | requests.filter(s='CANCELLED').length | Count                 |
-| Recent Requests | List          | requests.slice(0,5)                   | Latest 5 requests     |
+- `src/store/authStore.js`
+- `src/services/authService.js`
+- `src/services/apiClient.js`
+- `src/components/ProtectedRoute.jsx`
 
-**Visual Layout:**
+Responsibilities:
 
-```
-┌─ Dashboard Header
-├─ [Stats Cards: Total, Pending, Fulfilled, Cancelled]
-├─ [Action Buttons: Create Request, View All]
-└─ [Recent Requests List with status badges]
-```
+- persist user and tokens
+- initialize auth from local storage
+- refresh tokens when possible
+- expose role checks
+- guard routes by role
 
-### **Operator Dashboard** (`/operator/dashboard`)
+### 4.2 Complaint Management
 
-**Purpose:** Real-time overview of pending queue and active operations for rapid response
+Files:
 
-| **Metric**         | **Component**   | **Data Source**                           | **Calculation**  |
-| ------------------ | --------------- | ----------------------------------------- | ---------------- |
-| Pending Requests   | StatsCard       | requests.length (PENDING status)          | Count            |
-| Total Allocations  | StatsCard       | allocations.length                        | Count            |
-| In Transit         | StatsCard       | allocations.filter(s='IN_TRANSIT').length | Count            |
-| Delivered          | StatsCard       | allocations.filter(s='DELIVERED').length  | Count            |
-| 🚨 Urgent          | StatsCard (red) | requests.filter(p='EMERGENCY').length     | Count            |
-| Request Queue      | RequestQueue    | requests (sorted by priority DESC)        | Latest 5 pending |
-| Active Allocations | AllocationList  | allocations (s!='DELIVERED')              | Latest 5 active  |
+- `src/hooks/useRequest.js`
+- `src/services/requestService.js`
+- `src/pages/citizen/CreateRequestPage.jsx`
+- `src/pages/citizen/MyRequestsPage.jsx`
+- `src/pages/ComplaintDetail.jsx`
+- `src/pages/operator/ComplaintsPage.jsx`
+- `src/pages/admin/PendingComplaintsPage.jsx`
 
-**Visual Layout:**
+Responsibilities:
 
-```
-┌─ Top Bar [Urgent Alert Badge]
-├─ [KPI Cards: Pending, Total, In-Transit, Delivered, Urgent]
-├─ [Pending Request Queue with Auto/Manual buttons]
-└─ [Active Allocations with status updates]
-```
+- create complaint
+- load citizen complaints
+- load operator complaint queue
+- load admin complaint views
+- assign/start/resolve/status updates
+- complaint timeline
 
-### **Admin Dashboard** (`/admin/dashboard`)
+### 4.3 Admin Analytics
 
-**Purpose:** System-wide analytics for performance monitoring and compliance tracking
+Files:
 
-| **Metric**            | **Component** | **Data Source**              | **Calculation**                       |
-| --------------------- | ------------- | ---------------------------- | ------------------------------------- |
-| Total Requests        | StatsCard     | requests.length              | Count                                 |
-| Total Allocations     | StatsCard     | allocations.length           | Count                                 |
-| Fulfillment Rate (%)  | StatsCard     | (fulfilled/total)\*100       | Percentage                            |
-| Avg Response Time (h) | StatsCard     | Mock: 2.5h                   | Time from request to allocation       |
-| SLA Compliance (%)    | StatsCard     | Mock: 94%                    | % of requests delivered on-time       |
-| Requests by Status    | ProgressBars  | requests grouped by status   | Pending%, Fulfilled%, Cancelled%      |
-| Priority Distribution | BarChart      | requests grouped by priority | Count of EMERGENCY, HIGH, MEDIUM, LOW |
-| Recent Allocations    | Table         | allocations.slice(0,5)       | Latest 5 with status                  |
+- `src/pages/admin/DashboardPage.jsx`
+- `src/components/admin/AnalyticsCharts.jsx`
+- `src/components/admin/HeatmapView.jsx`
+- `src/components/admin/OperatorPerformance.jsx`
+- `src/components/admin/AdminLocationsMap.jsx`
 
-**Visual Layout:**
+Responsibilities:
 
-```
-┌─ [KPI Cards: Total Requests, Total Allocations, Fulfillment Rate, Response Time, SLA]
-├─ [Requests by Status Chart | Priority Distribution Chart]
-└─ [Recent Allocations Table]
-```
+- total counts and KPIs
+- overdue complaint monitoring
+- category/status/daily trend charts
+- area and location visualization
+- operator performance reporting
 
-### **Chart Types & Libraries**
+### 4.4 Provider / Operator Profile
 
-- **Simple Progress Bars:** HTML div with CSS background (no library needed)
-- **Line Charts (Response Time):** Use React-compatible library (e.g., Recharts)
-- **Pie/Bar Charts:** Use Recharts or Chart.js
-- **Gauge Charts (Resource Util):** Custom CSS or Recharts
+Files:
 
-### **Real-Time Updates** (Future)
+- `src/hooks/useProvider.js`
+- `src/services/providerService.js`
+- `src/pages/operator/ProfilePage.jsx`
+- `src/pages/operator/ProviderServicesPage.jsx`
 
-- Poll `/api/requests/pending` every 10 seconds (Operator)
-- Use WebSocket/SSE for live allocation updates
-- Operator page: Auto-refresh pending queue
+Responsibilities:
 
-### **Analytics Export** (Future)
-
-- CSV export for Audit Logs
-- PDF report generation for Admin Reports
-- Email scheduled reports
+- maintain provider profile
+- list service catalog
+- manage provider service offerings
 
 ---
 
-## 7. STATE FLOW EXAMPLES
+## 5. Layout Architecture
 
-### **Auth Flow**
+### Shared Layouts
 
-```
-User types email/password on Login page
-  ↓
-handleSubmit() → validate form
-  ↓
-useAuth.login(email, password)
-  ↓
-authService.login(email, password)
-  ↓
-apiClient.post('/auth/login', {email, password})
-  ↓
-Axios request interceptor adds Authorization header
-  ↓
-Backend returns {user, accessToken, refreshToken}
-  ↓
-AuthStore updates: set({user, accessToken, refreshToken, isAuthenticated: true})
-  ↓
-localStorage saved (via Zustand persist middleware)
-  ↓
-Navigate to /citizen/dashboard
-```
+- `MainLayout`: public/auth pages
+- `CitizenLayout`: citizen navigation shell
+- `OperatorLayout`: operator navigation shell
+- `AdminLayout`: admin navigation shell
+- `TopUtilityBar`: shared utility/header support
 
-### **Request Creation Flow**
+These layouts keep navigation and role-specific structure separate while reusing common UI
+components.
 
-```
-User fills form on /citizen/create-request
-  ↓
-handleSubmit() → validateForm()
-  ↓
-useRequest.createRequest({resource_category, quantity, priority, ...})
-  ↓
-requestService.createRequest(data)
-  ↓
-apiClient.post('/api/requests', data)
-  ↓
-Request interceptor adds token
-  ↓
-Backend creates request → returns {id, status: 'PENDING', ...}
-  ↓
-setSuccess(true)
-  ↓
-After 2s → navigate('/citizen/my-requests')
-  ↓
-New page calls getMyRequests() → updates requests state
-```
+---
 
-### **Token Refresh Flow** (Automatic on 401)
+## 6. Component Structure
 
-```
-User makes request (e.g., getRequest/:id)
-  ↓
-apiClient.get('/api/requests/123')
-  ↓
-Request interceptor adds token (1-hour old, about to expire)
-  ↓
-Backend returns 401 (token expired)
-  ↓
-Response interceptor catches 401
-  ↓
-Call authService.refreshToken(refreshToken)
-  ↓
-apiClient.post('/auth/refresh', {refreshToken})
-  ↓
-Backend returns {accessToken: newToken, refreshToken: newRefresh}
-  ↓
-Update localStorage with new tokens
-  ↓
-Update AuthStore tokens
-  ↓
-Retry original request (getRequest) with new token
-  ↓
-Backend returns 200 with request data
-  ↓
-Component state updates, UI re-renders
+### Common Components
+
+Located in `src/components/common/`
+
+- `Button`
+- `Input`
+- `Badge`
+- `Alert`
+- `MetricCard`
+- `Spinner`
+
+Used for:
+
+- forms
+- loading states
+- status indicators
+- dashboard summaries
+
+### Operator Components
+
+Located in `src/components/operator/`
+
+- `OperatorDashboard`
+- `MyComplaints`
+- `ComplaintCard`
+- `Sidebar`
+- `StatCard`
+- `MiniOperatorChart`
+
+### Admin Components
+
+Located in `src/components/admin/`
+
+- `AnalyticsCharts`
+- `HeatmapView`
+- `OperatorPerformance`
+- `AdminLocationsMap`
+
+---
+
+## 7. State Management Flow
+
+### Global Auth State
+
+Implemented with Zustand in `authStore`.
+
+Stored state:
+
+- `user`
+- `accessToken`
+- `refreshToken`
+- `isAuthenticated`
+- `isLoading`
+- `error`
+
+Main actions:
+
+- `initializeAuth`
+- `register`
+- `login`
+- `googleLogin`
+- `logout`
+- `refreshAccessToken`
+- `changePassword`
+- `updateUser`
+- `hasRole`
+- `hasAnyRole`
+
+### Feature Hook State
+
+Feature data is managed in custom hooks rather than one large global store.
+
+Examples:
+
+- `useRequest`
+- `useAllocation`
+- `useProvider`
+- `useAuth`
+
+This keeps feature state localized and easier to reason about.
+
+---
+
+## 8. API Client Design
+
+`apiClient.js` is the shared Axios layer.
+
+Responsibilities:
+
+- base URL configuration
+- attaching bearer token from auth store
+- centralized error handling
+- refresh-token flow integration
+
+Request pattern:
+
+```text
+Page/Component
+  -> custom hook
+  -> service wrapper
+  -> apiClient
+  -> backend API
+  -> response to hook state
+  -> UI update
 ```
 
 ---
 
-## 8. IMPLEMENTATION CHECKLIST
+## 9. Current Complaint UI Flow
 
-### ✅ Completed
+### Citizen Complaint Creation
 
-- [x] Spinner, Button, Input, Badge, Alert components
-- [x] Main, Citizen, Operator, Admin layouts
-- [x] ProtectedRoute, RoleGuard
-- [x] Login, Register pages
-- [x] Citizen: Dashboard, Create Request, My Requests pages
-- [x] Operator: Dashboard, Pending Requests, Allocation Details pages
-- [x] Admin: Dashboard page
-- [x] Error pages (404, 403)
-- [x] Auth store (Zustand) with token management
-- [x] API client with interceptors
-- [x] Custom hooks (useAuth, useRequest, useAllocation)
-- [x] Service wrappers (authService, requestService, allocationService)
+Screen: `CreateRequestPage`
 
-### ⏳ Queued for Phase 9
+Features:
 
-- [ ] Card components (RequestCard, AllocationCard, etc.)
-- [ ] Form components (RequestForm, AllocationForm, etc.)
-- [ ] Table components (RequestsTable, AllocationsTable, etc.)
-- [ ] Chart components (RequestMetrics, ResponseTime, etc.)
-- [ ] Admin pages (Users, Resources, Audit Logs, Reports, Settings)
-- [ ] Operator: Active Allocations, Resource Suggestions pages
-- [ ] Citizen: Request Detail, tracking page
-- [ ] Toast notification system (Toastify or similar)
-- [ ] Real-time updates (socket.io or polling)
-- [ ] Analytics and reporting UI
-- [ ] E2E tests (Cypress or Playwright)
+- complaint category dropdown
+- description field
+- area, address, pincode
+- map click to set latitude/longitude
+- optional image upload with compression
+- dynamic area options from backend, with fallback defaults
 
-### ⏳ Post-Implementation
+Flow:
 
-- [ ] Performance optimization (lazy loading, memoization)
-- [ ] Accessibility audit (a11y)
-- [ ] Mobile responsiveness QA
-- [ ] Browser compatibility testing
-- [ ] Offline support (service workers)
+```text
+Citizen fills form
+  -> client validation
+  -> requestService.createRequest()
+  -> POST /requests
+  -> success message
+  -> redirect to /citizen/my-requests
+```
+
+### Citizen Complaint Tracking
+
+Screen: `MyRequestsPage`
+
+Features:
+
+- filter by status
+- filter by category
+- text search
+- view operator name, timestamps, and resolution note
+- open complaint detail page
+
+### Operator Complaint Handling
+
+Screen: `OperatorComplaintsPage`
+
+Features:
+
+- load assigned complaints
+- start work from complaint list
+- open complaint detail page
+
+### Admin Dashboard
+
+Screen: `AdminDashboardPage`
+
+Features:
+
+- complaint KPIs
+- resolution rate
+- overdue complaints
+- analytics charts
+- heatmap
+- admin location map
+- operator performance panel
+- area master creation and listing
 
 ---
 
-## 9. KEY ARCHITECTURAL DECISIONS
+## 10. Error and Loading Handling
 
-1. **Zustand for Auth** — Lightweight, persists to localStorage, integrates with axios interceptors
-2. **React Hooks for Requests/Allocations** — Flexible state per component, no global overhead
-3. **Centralized API Client** — Single Axios instance with interceptors prevents code duplication
-4. **Tailwind CSS** — Utility-first, custom theme for brand consistency
-5. **Role-Based Layouts** — Separate sidebars per role prevents unauthorized UI exposure
-6. **ProtectedRoute + RoleGuard** — Dual protection at route level prevents access
-7. **Error Utilities** — Centralized error messages for consistency and i18n-ready
-8. **Service Wrappers** — Keep components clean, API logic isolated in services
+### Loading
+
+The frontend uses:
+
+- `InlineSpinner`
+- loading button states
+- section-level conditional rendering
+
+### Error Handling
+
+Pattern:
+
+- service throws API error
+- hook stores readable message
+- page renders `ErrorAlert`
+
+This pattern is used throughout auth, complaint, and admin flows.
 
 ---
 
-## 10. NEXT STEPS
+## 11. Route Protection
 
-1. ✅ **Complete Core Pages** (Login, Dashboards, Create Request, etc.) — DONE
-2. **Implement Card & Form Components**
-3. **Add Table Components with Sorting & Pagination**
-4. **Build Analytics Charts** (Recharts/Chart.js integration)
-5. **Complete Admin Pages** (User Management, Audit Logs, Reports)
-6. **Add Toast Notifications**
-7. **Implement Real-Time Updates** (WebSocket or polling)
-8. **Test End-to-End** (Authentication flow, request creation, allocation updates)
-9. **Performance Optimization** (Code splitting, lazy loading)
-10. **Deploy to Production**
+Route protection is handled by `RoleGuard`.
+
+Rules:
+
+- citizen routes: citizen only
+- operator routes: operator and sometimes admin
+- admin routes: admin only
+- shared complaint detail: citizen, operator, admin
+
+This keeps routing behavior consistent with backend authorization.
+
+---
+
+## 12. Mismatches Removed from Older Docs
+
+Older frontend documentation referenced pages such as:
+
+- `/operator/pending-requests`
+- `/operator/active-allocations`
+- `/operator/resource-suggestions`
+- `/admin/resources`
+- `/admin/reports`
+- `/admin/settings`
+- `/citizen/request/:id`
+
+Those are not the current primary routed pages in `App.jsx`, so they should not be treated as
+implemented frontend routes.
+
+---
+
+## 13. Current Strengths
+
+- role-based routing is clear
+- auth persistence is implemented
+- complaint creation UX is mature
+- admin dashboard is feature-rich
+- location-based complaint input is integrated
+- complaint tracking is available across roles
+
+---
+
+## 14. Next Frontend Improvements
+
+- unify operator status actions with backend-supported routes
+- document remaining provider/allocation screens more explicitly
+- add real-time notifications if socket support is introduced
+- improve responsive and accessibility coverage
+- add automated frontend tests

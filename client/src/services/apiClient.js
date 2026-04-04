@@ -18,7 +18,7 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (requestConfig) => {
-    const token = localStorage.getItem(config.auth.tokenKey);
+    const token = sessionStorage.getItem(config.auth.tokenKey);
     if (token) {
       requestConfig.headers.Authorization = `Bearer ${token}`;
     }
@@ -43,7 +43,7 @@ apiClient.interceptors.response.use(
     if (isTokenExpiredError && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
 
-      const refreshToken = localStorage.getItem(config.auth.refreshTokenKey);
+      const refreshToken = sessionStorage.getItem(config.auth.refreshTokenKey);
 
       if (refreshToken) {
         return apiClient
@@ -52,8 +52,8 @@ apiClient.interceptors.response.use(
             const { accessToken, refreshToken: newRefreshToken } =
               response.data.data;
 
-            localStorage.setItem(config.auth.tokenKey, accessToken);
-            localStorage.setItem(config.auth.refreshTokenKey, newRefreshToken);
+            sessionStorage.setItem(config.auth.tokenKey, accessToken);
+            sessionStorage.setItem(config.auth.refreshTokenKey, newRefreshToken);
 
             originalRequest.headers.Authorization = `Bearer ${accessToken}`;
             return apiClient(originalRequest);

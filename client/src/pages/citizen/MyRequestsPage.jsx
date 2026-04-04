@@ -5,11 +5,14 @@ import { InlineSpinner } from "../../components/common/Spinner";
 import { ErrorAlert } from "../../components/common/Alert";
 import { Input } from "../../components/common";
 import useRequest from "../../hooks/useRequest";
+import useAuth from "../../hooks/useAuth";
+import useRealtimeComplaints from "../../hooks/useRealtimeComplaints";
 import { formatters } from "../../utils/formatters";
 import { getComplaintCategoryMeta } from "../../utils/complaintCategory";
 
 export const MyRequestsPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { requests, loading, error, getMyRequests } = useRequest();
   const [filters, setFilters] = useState({
     status: "",
@@ -71,6 +74,19 @@ export const MyRequestsPage = () => {
   useEffect(() => {
     loadRequests();
   }, [loadRequests]);
+
+  useRealtimeComplaints({
+    onAssigned: (payload) => {
+      if (payload?.citizenId === user?.id) {
+        loadRequests();
+      }
+    },
+    onStatusChanged: (payload) => {
+      if (payload?.citizenId === user?.id) {
+        loadRequests();
+      }
+    },
+  });
 
   return (
     <CitizenLayout>
@@ -185,6 +201,9 @@ export const MyRequestsPage = () => {
                             {complaint.assignedOperator.name}
                           </span>
                         </p>
+                      )}
+                      {complaint.assignment_reason && (
+                        <p>{complaint.assignment_reason}</p>
                       )}
                       {complaint.resolved_at && (
                         <p>Resolved on {formatters.formatDate(complaint.resolved_at)}</p>

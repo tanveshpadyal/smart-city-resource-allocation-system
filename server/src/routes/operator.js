@@ -16,7 +16,7 @@ const requestController = require("../controllers/request");
 router.get(
   "/complaints",
   authenticateToken,
-  authorize(["OPERATOR"]),
+  authorize(["OPERATOR", "ADMIN"]),
   requestController.getOperatorComplaints,
 );
 

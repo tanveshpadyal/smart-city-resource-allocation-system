@@ -13,12 +13,21 @@ const API_BASE_URL = (
   (import.meta.env.PROD ? DEFAULT_PROD_API_URL : DEFAULT_DEV_API_URL)
 ).replace(/\/+$/, "");
 
+const SOCKET_URL = (
+  import.meta.env.VITE_SOCKET_URL ||
+  API_BASE_URL.replace(/\/api$/, "")
+).replace(/\/+$/, "");
+
 export const config = {
   // API Configuration
   api: {
     baseURL: API_BASE_URL,
     timeout: 10000,
     retries: 3,
+  },
+
+  socket: {
+    url: SOCKET_URL,
   },
 
   // Auth Configuration

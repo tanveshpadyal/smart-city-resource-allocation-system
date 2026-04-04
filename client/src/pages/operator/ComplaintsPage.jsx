@@ -7,10 +7,13 @@ import { useNavigate } from "react-router-dom";
 import { OperatorLayout } from "../../components/layouts/OperatorLayout";
 import { ErrorAlert } from "../../components/common/Alert";
 import useRequest from "../../hooks/useRequest";
+import useAuth from "../../hooks/useAuth";
+import useRealtimeComplaints from "../../hooks/useRealtimeComplaints";
 import MyComplaints from "../../components/operator/MyComplaints";
 
 export const OperatorComplaintsPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const {
     requests,
     loading,
@@ -22,6 +25,19 @@ export const OperatorComplaintsPage = () => {
   useEffect(() => {
     getOperatorComplaints();
   }, [getOperatorComplaints]);
+
+  useRealtimeComplaints({
+    onAssigned: (payload) => {
+      if (payload?.assignedTo === user?.id) {
+        getOperatorComplaints();
+      }
+    },
+    onStatusChanged: (payload) => {
+      if (payload?.assignedTo === user?.id) {
+        getOperatorComplaints();
+      }
+    },
+  });
 
   const handleStartWork = async (complaintId) => {
     try {

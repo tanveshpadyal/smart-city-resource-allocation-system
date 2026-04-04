@@ -7,6 +7,7 @@ import { OperatorLayout } from "../components/layouts/OperatorLayout";
 import { InlineSpinner } from "../components/common/Spinner";
 import { ErrorAlert } from "../components/common/Alert";
 import useAuth from "../hooks/useAuth";
+import useRealtimeComplaints from "../hooks/useRealtimeComplaints";
 import requestService from "../services/requestService";
 import { formatters } from "../utils/formatters";
 
@@ -84,6 +85,20 @@ export const ComplaintDetail = () => {
   useEffect(() => {
     loadTimeline();
   }, [loadTimeline]);
+
+  useRealtimeComplaints({
+    complaintId: id,
+    onAssigned: (payload) => {
+      if (payload?.complaintId === id) {
+        loadTimeline();
+      }
+    },
+    onStatusChanged: (payload) => {
+      if (payload?.complaintId === id) {
+        loadTimeline();
+      }
+    },
+  });
 
   const Layout = useMemo(() => {
     if (user?.role === "ADMIN") return AdminLayout;
@@ -279,6 +294,10 @@ export const ComplaintDetail = () => {
               )}
             </div>
             <div>
+              <p className="text-xs uppercase text-slate-500 dark:text-slate-500">Priority</p>
+              <p className="font-medium">{complaint.priority || "MEDIUM"}</p>
+            </div>
+            <div>
               <p className="text-xs uppercase text-slate-500 dark:text-slate-500">Assigned To</p>
               <p className="font-medium">
                 {complaint.assignedOperator?.name || "Not assigned"}
@@ -292,6 +311,19 @@ export const ComplaintDetail = () => {
             <div>
               <p className="text-xs uppercase text-slate-500 dark:text-slate-500">Created</p>
               <p className="font-medium">{formatters.formatDateTime(complaint.requested_at)}</p>
+            </div>
+            <div className="md:col-span-2">
+              <p className="text-xs uppercase text-slate-500 dark:text-slate-500">
+                Assignment
+              </p>
+              <p className="font-medium">
+                {(complaint.assignment_strategy || "AUTO").replace("_", " ")}
+              </p>
+              {complaint.assignment_reason && (
+                <p className="text-slate-600 dark:text-slate-400">
+                  {complaint.assignment_reason}
+                </p>
+              )}
             </div>
           </div>
           </div>

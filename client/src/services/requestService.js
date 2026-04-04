@@ -14,6 +14,20 @@ const requestService = {
     return response.data;
   },
 
+  getMyRequests: async (filters = {}) => {
+    const response = await apiClient.get("/requests/me", {
+      params: filters,
+    });
+    return response.data;
+  },
+
+  getPendingRequests: async (filters = {}) => {
+    const response = await apiClient.get("/requests/admin/pending", {
+      params: filters,
+    });
+    return response.data;
+  },
+
   /**
    * Get complaints assigned to current operator
    */
@@ -122,6 +136,11 @@ const requestService = {
     const response = await apiClient.post(`/requests/${requestId}/assign`, {
       operator_id: operatorId,
     });
+    return response.data;
+  },
+
+  reassignComplaint: async (requestId) => {
+    const response = await apiClient.post(`/requests/${requestId}/reassign`);
     return response.data;
   },
 

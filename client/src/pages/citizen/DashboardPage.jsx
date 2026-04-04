@@ -8,10 +8,13 @@ import { InlineSpinner } from "../../components/common/Spinner";
 import { ErrorAlert } from "../../components/common/Alert";
 import { Button, MetricCard } from "../../components/common";
 import useRequest from "../../hooks/useRequest";
+import useAuth from "../../hooks/useAuth";
+import useRealtimeComplaints from "../../hooks/useRealtimeComplaints";
 import { Link } from "react-router-dom";
 import { Clock3, FileText, PackageCheck, XCircle } from "lucide-react";
 
 export const CitizenDashboardPage = () => {
+  const { user } = useAuth();
   const { requests, loading, error, getMyRequests } = useRequest();
 
   const loadRequests = useCallback(async () => {
@@ -25,6 +28,19 @@ export const CitizenDashboardPage = () => {
   useEffect(() => {
     loadRequests();
   }, [loadRequests]);
+
+  useRealtimeComplaints({
+    onAssigned: (payload) => {
+      if (payload?.citizenId === user?.id) {
+        loadRequests();
+      }
+    },
+    onStatusChanged: (payload) => {
+      if (payload?.citizenId === user?.id) {
+        loadRequests();
+      }
+    },
+  });
 
   const stats = useMemo(() => {
     if (requests.length === 0) {

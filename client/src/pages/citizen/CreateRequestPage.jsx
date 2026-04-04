@@ -45,9 +45,13 @@ export const CreateRequestPage = () => {
   const { createRequest, loading, error } = useRequest();
   const mapRef = useRef(null);
   const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState(
+    "Complaint created successfully! Redirecting...",
+  );
   const [availableAreas, setAvailableAreas] = useState([]);
   const [formData, setFormData] = useState({
     complaint_category: "",
+    priority: "MEDIUM",
     description: "",
     area: "",
     address: "",
@@ -64,6 +68,13 @@ export const CreateRequestPage = () => {
     { value: "WATER", label: "Water Issue" },
     { value: "LIGHT", label: "Street Light" },
     { value: "OTHER", label: "Other" },
+  ];
+
+  const priorities = [
+    { value: "LOW", label: "Low" },
+    { value: "MEDIUM", label: "Medium" },
+    { value: "HIGH", label: "High" },
+    { value: "EMERGENCY", label: "Emergency" },
   ];
 
   useEffect(() => {
@@ -238,6 +249,7 @@ export const CreateRequestPage = () => {
     try {
       const payload = {
         complaint_category: formData.complaint_category,
+        priority: formData.priority,
         description: formData.description,
         location: {
           area: formData.area,
@@ -253,6 +265,15 @@ export const CreateRequestPage = () => {
       const response = await createRequest(payload);
       console.log("[CreateRequest] Response:", response);
 
+      const assignmentReason =
+        response?.data?.assignment_reason ||
+        response?.assignment?.reason ||
+        "";
+      setSuccessMessage(
+        response?.data?.auto_assigned
+          ? `Complaint created and auto-assigned. ${assignmentReason}`.trim()
+          : `Complaint created successfully and is awaiting assignment. ${assignmentReason}`.trim(),
+      );
       setSuccess(true);
       setTimeout(() => {
         navigate("/citizen/my-requests");
@@ -279,7 +300,7 @@ export const CreateRequestPage = () => {
     return (
       <CitizenLayout>
         <SuccessAlert
-          message="Complaint created successfully! Redirecting..."
+          message={successMessage}
           onClose={() => {}}
         />
       </CitizenLayout>
@@ -317,6 +338,20 @@ export const CreateRequestPage = () => {
               }
               id="complaint_category"
               error={errors.complaint_category}
+              required
+            />
+
+            <Select
+              label="Priority"
+              options={priorities}
+              value={formData.priority}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  priority: e.target.value,
+                })
+              }
+              id="priority"
               required
             />
 

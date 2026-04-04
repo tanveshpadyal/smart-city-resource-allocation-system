@@ -1,18 +1,23 @@
 /**
  * Request Controller (Complaint Management)
- * Handles citizen complaint creation and status tracking
+ * Handles citizen complaint creation and status tracking.
  */
 
 const db = require("../models");
 const { Sequelize } = require("sequelize");
 const { Parser } = require("json2csv");
 const {
-  assignComplaintByArea,
+  autoAssignComplaint,
   computeLocationBucket,
   findOpenBucketParent,
   ACTIVE_COMPLAINT_STATUSES,
+  reassignComplaintAutomatically,
 } = require("../services/complaintAssignment");
 const { SLA_HOURS, updateSlaBreaches } = require("../services/slaService");
+const {
+  emitComplaintAssigned,
+  emitComplaintStatusChanged,
+} = require("../sockets");
 const { Op } = Sequelize;
 
 /**
@@ -29,6 +34,7 @@ const createRequest = async (req, res) => {
     const userId = req.user?.userId;
     const {
       complaint_category,
+      priority,
       location_id,
       location,
       latitude,
@@ -143,6 +149,12 @@ const createRequest = async (req, res) => {
       });
     }
 
+    const normalizedPriority = ["LOW", "MEDIUM", "HIGH", "EMERGENCY"].includes(
+      priority,
+    )
+      ? priority
+      : "MEDIUM";
+
     const complaintArea = locationPayload?.area || locationRecord?.zone_name || "";
     const locationBucket = computeLocationBucket(
       complaint_category,
@@ -152,9 +164,9 @@ const createRequest = async (req, res) => {
 
     const transaction = await db.sequelize.transaction();
     let complaint;
-    let autoAssignedOperator = null;
-    let assignmentStrategy = "AUTO";
+    let autoAssignmentResult = null;
     let parentComplaintId = null;
+    let assignmentNotificationPayload = null;
 
     try {
       const openBucketParent = await findOpenBucketParent(
@@ -165,14 +177,17 @@ const createRequest = async (req, res) => {
         parentComplaintId = openBucketParent.id;
       }
 
-      autoAssignedOperator = await assignComplaintByArea(
-        complaintArea,
+      autoAssignmentResult = await autoAssignComplaint({
+        areaName: complaintArea,
+        areaId: locationRecord?.id || null,
+        complaintCoords: {
+          lat: locationPayload?.lat ?? Number(locationRecord?.latitude ?? null),
+          lng: locationPayload?.lng ?? Number(locationRecord?.longitude ?? null),
+        },
+        complaintPriority: normalizedPriority,
         transaction,
-      );
-      const isAutoAssigned = Boolean(autoAssignedOperator?.id);
-      if (!isAutoAssigned) {
-        assignmentStrategy = "ESCALATED";
-      }
+      });
+      const isAutoAssigned = Boolean(autoAssignmentResult?.assigned);
 
       complaint = await db.Request.create(
         {
@@ -180,16 +195,18 @@ const createRequest = async (req, res) => {
           location_id: locationRecord?.id || null,
           location_data: locationPayload,
           complaint_category,
-          assigned_to: isAutoAssigned ? autoAssignedOperator.id : null,
+          priority: normalizedPriority,
+          assigned_to: isAutoAssigned ? autoAssignmentResult.operator.id : null,
           description,
           image: image || null,
           slaBreached: false,
           status: isAutoAssigned ? "ASSIGNED" : "PENDING",
           requested_at: new Date(),
           assigned_at: isAutoAssigned ? new Date() : null,
-          assignment_strategy: assignmentStrategy,
-          assignment_score: autoAssignedOperator?.score || null,
-          assignment_reason: autoAssignedOperator?.reason || "No available contractor for area",
+          assignment_strategy: autoAssignmentResult?.strategy || "ESCALATED",
+          assignment_score: autoAssignmentResult?.score ?? null,
+          assignment_reason:
+            autoAssignmentResult?.reason || "No available operator for this complaint",
           location_bucket: locationBucket,
           parent_complaint_id: parentComplaintId,
         },
@@ -199,14 +216,30 @@ const createRequest = async (req, res) => {
       if (isAutoAssigned) {
         await db.User.update(
           { last_assigned_at: new Date() },
-          { where: { id: autoAssignedOperator.id }, transaction },
+          { where: { id: autoAssignmentResult.operator.id }, transaction },
         );
+        assignmentNotificationPayload = {
+          complaint: {
+            ...complaint.toJSON(),
+            user_id: userId,
+          },
+          operator: autoAssignmentResult.operator,
+          assignmentMethod: autoAssignmentResult?.strategy || "AUTO",
+          triggeredBy: {
+            userId,
+            role: req.user?.role || "CITIZEN",
+          },
+        };
       }
 
       await transaction.commit();
     } catch (innerError) {
       await transaction.rollback();
       throw innerError;
+    }
+
+    if (assignmentNotificationPayload) {
+      emitComplaintAssigned(assignmentNotificationPayload);
     }
 
     // ========== LOG COMPLAINT CREATION ==========
@@ -219,18 +252,25 @@ const createRequest = async (req, res) => {
         category: complaint_category,
         location_id: locationRecord?.id || null,
         location: locationPayload,
-        auto_assigned: Boolean(autoAssignedOperator?.id),
-        assigned_to: autoAssignedOperator?.id || null,
+        auto_assigned: Boolean(autoAssignmentResult?.assigned),
+        assigned_to: autoAssignmentResult?.operator?.id || null,
         assignment_strategy: complaint.assignment_strategy,
         assignment_reason: complaint.assignment_reason,
+        assignment_score: complaint.assignment_score,
         parent_complaint_id: complaint.parent_complaint_id || null,
       },
     });
 
     return res.status(201).json({
       success: true,
-      message: "Complaint created successfully",
-      data: complaint.toJSON(),
+      message: autoAssignmentResult?.assigned
+        ? "Complaint created and auto-assigned successfully"
+        : "Complaint created successfully and is awaiting assignment",
+      data: {
+        ...complaint.toJSON(),
+        auto_assigned: Boolean(autoAssignmentResult?.assigned),
+        assigned_operator: autoAssignmentResult?.operator || null,
+      },
     });
   } catch (error) {
     const validationDetails = Array.isArray(error?.errors)
@@ -415,7 +455,14 @@ const getPendingRequests = async (req, res) => {
         },
         {
           model: db.User,
+          as: "User",
           attributes: ["id", "name", "email"],
+        },
+        {
+          model: db.User,
+          as: "assignedOperator",
+          attributes: ["id", "name", "email"],
+          required: false,
         },
       ],
       order: [["requested_at", "ASC"]],
@@ -463,7 +510,14 @@ const getAssignedComplaints = async (req, res) => {
         },
         {
           model: db.User,
+          as: "User",
           attributes: ["id", "name", "email"],
+        },
+        {
+          model: db.User,
+          as: "assignedOperator",
+          attributes: ["id", "name", "email"],
+          required: false,
         },
       ],
       order: [["assigned_at", "ASC"]],
@@ -504,6 +558,12 @@ const getOperatorComplaints = async (req, res) => {
           model: db.User,
           as: "User",
           attributes: ["id", "name", "email"],
+        },
+        {
+          model: db.User,
+          as: "assignedOperator",
+          attributes: ["id", "name", "email"],
+          required: false,
         },
       ],
       order: [["assigned_at", "DESC"]],
@@ -586,6 +646,14 @@ const updateComplaintStatus = async (req, res) => {
       actor_id: operatorId,
     });
 
+    emitComplaintStatusChanged({
+      complaint: complaint.toJSON(),
+      changedBy: {
+        userId: operatorId,
+        role: req.user?.role || "OPERATOR",
+      },
+    });
+
     return res.status(200).json({
       success: true,
       message: "Complaint status updated",
@@ -658,7 +726,7 @@ const assignComplaint = async (req, res) => {
       });
     }
 
-    if (complaint.status !== "PENDING") {
+    if (!["PENDING", "ASSIGNED"].includes(complaint.status)) {
       await transaction.rollback();
       return res.status(400).json({
         success: false,
@@ -673,7 +741,6 @@ const assignComplaint = async (req, res) => {
         status: { [Op.in]: ACTIVE_COMPLAINT_STATUSES },
       },
       transaction,
-      lock: transaction.LOCK.UPDATE,
     });
 
     const capacity = Number(operator.max_active_complaints) || 10;
@@ -692,7 +759,7 @@ const assignComplaint = async (req, res) => {
     complaint.assignment_strategy = "MANUAL";
     complaint.assignment_score = activeCount / capacity;
     complaint.assignment_reason =
-      `manual override by admin (load ${activeCount}/${capacity})`;
+      `manual override by admin (closest/auto assignment overridden, load ${activeCount}/${capacity})`;
     await complaint.save({ transaction });
 
     await operator.update({ last_assigned_at: new Date() }, { transaction });
@@ -723,6 +790,16 @@ const assignComplaint = async (req, res) => {
 
     await transaction.commit();
 
+    emitComplaintAssigned({
+      complaint: complaint.toJSON(),
+      operator: operator.toJSON(),
+      assignmentMethod: "MANUAL",
+      triggeredBy: {
+        userId: req.user?.userId,
+        role: req.user?.role || "ADMIN",
+      },
+    });
+
     return res.status(200).json({
       success: true,
       message: "Complaint assigned to operator",
@@ -735,6 +812,65 @@ const assignComplaint = async (req, res) => {
       success: false,
       error: "Failed to assign complaint",
       code: "ASSIGN_ERROR",
+    });
+  }
+};
+
+/**
+ * REASSIGN COMPLAINT (ADMIN ONLY)
+ * Attempts auto-reassignment for PENDING or ASSIGNED complaints
+ */
+const reassignComplaint = async (req, res) => {
+  const transaction = await db.sequelize.transaction();
+
+  try {
+    const { requestId } = req.params;
+    const result = await reassignComplaintAutomatically(requestId, transaction);
+
+    await db.AdminActivityLog.create(
+      {
+        admin_id: req.user?.userId,
+        action_type: "REASSIGN",
+        entity_type: "Complaint",
+        entity_id: requestId,
+        metadata: {
+          reassigned: result.reassigned,
+          assignment_reason: result.assignment?.reason || result.reason || null,
+          assigned_to: result.assignment?.operator?.id || null,
+        },
+      },
+      { transaction },
+    );
+
+    await transaction.commit();
+
+    if (result.reassigned && result.complaint && result.assignment?.operator) {
+      emitComplaintAssigned({
+        complaint: result.complaint.toJSON(),
+        operator: result.assignment.operator,
+        assignmentMethod: result.assignment.strategy || "AUTO",
+        triggeredBy: {
+          userId: req.user?.userId,
+          role: req.user?.role || "ADMIN",
+        },
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: result.reassigned
+        ? "Complaint re-assigned automatically"
+        : "Complaint remains pending for admin review",
+      data: result.complaint?.toJSON() || null,
+      assignment: result.assignment || null,
+    });
+  } catch (error) {
+    await transaction.rollback();
+    console.error("Error in reassignComplaint:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to reassign complaint",
+      code: "REASSIGN_ERROR",
     });
   }
 };
@@ -782,6 +918,14 @@ const startComplaintResolution = async (req, res) => {
       entity_id: complaint.id,
       action: "COMPLAINT_IN_PROGRESS",
       actor_id: operatorId,
+    });
+
+    emitComplaintStatusChanged({
+      complaint: complaint.toJSON(),
+      changedBy: {
+        userId: operatorId,
+        role: req.user?.role || "OPERATOR",
+      },
     });
 
     return res.status(200).json({
@@ -868,6 +1012,14 @@ const resolveComplaint = async (req, res) => {
       metadata: { remark: resolutionNote },
     });
 
+    emitComplaintStatusChanged({
+      complaint: complaint.toJSON(),
+      changedBy: {
+        userId: operatorId,
+        role: req.user?.role || "OPERATOR",
+      },
+    });
+
     return res.status(200).json({
       success: true,
       message: "Complaint resolved successfully",
@@ -950,6 +1102,7 @@ const getAllComplaints = async (req, res) => {
         },
         {
           model: db.User,
+          as: "User",
           attributes: ["id", "name", "email"],
         },
         {
@@ -1347,8 +1500,12 @@ const getComplaintTimeline = async (req, res) => {
           complaint: {
             id: complaint.id,
             complaint_category: complaint.complaint_category,
+            priority: complaint.priority,
             description: complaint.description,
             status: complaint.status,
+            assignment_strategy: complaint.assignment_strategy,
+            assignment_score: complaint.assignment_score,
+            assignment_reason: complaint.assignment_reason,
             assignedOperator: complaint.assignedOperator,
             citizen: complaint.User,
             requested_at: complaint.requested_at,
@@ -1840,6 +1997,7 @@ module.exports = {
   getOperatorPerformance,
   getAdminAnalytics,
   assignComplaint,
+  reassignComplaint,
   getComplaintTimeline,
   getOverdueComplaints,
   exportComplaints,

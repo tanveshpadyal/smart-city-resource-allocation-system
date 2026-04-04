@@ -220,6 +220,13 @@ router.post(
   requestController.assignComplaint,
 );
 
+router.post(
+  "/:requestId/reassign",
+  authenticateToken,
+  authorize(["ADMIN"]),
+  requestController.reassignComplaint,
+);
+
 // ============================================
 // OPERATOR ROUTES
 // ============================================

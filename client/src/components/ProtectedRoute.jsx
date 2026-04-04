@@ -54,7 +54,16 @@ export const RoleGuard = ({ children, requiredRoles }) => {
   }
 
   if (requiredRoles && !requiredRoles.includes(user?.role)) {
-    return <Navigate to="/unauthorized" replace />;
+    const fallbackRoute =
+      user?.role === "ADMIN"
+        ? "/admin/dashboard"
+        : user?.role === "OPERATOR"
+          ? "/operator/dashboard"
+          : user?.role === "CITIZEN"
+            ? "/citizen/dashboard"
+            : "/unauthorized";
+
+    return <Navigate to={fallbackRoute} replace />;
   }
 
   return children;

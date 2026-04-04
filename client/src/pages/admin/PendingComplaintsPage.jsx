@@ -9,6 +9,7 @@ import { Button } from "../../components/common";
 import useRequest from "../../hooks/useRequest";
 import requestService from "../../services/requestService";
 import authService from "../../services/authService";
+import useRealtimeComplaints from "../../hooks/useRealtimeComplaints";
 import { formatters } from "../../utils/formatters";
 import { getComplaintCategoryMeta } from "../../utils/complaintCategory";
 
@@ -84,7 +85,7 @@ const applyLocalFilters = (items, filters) => {
 
 export const PendingComplaintsPage = () => {
   const navigate = useNavigate();
-  const { requests, loading, error, getAllRequests, assignComplaint } =
+  const { requests, loading, error, getAllRequests, assignComplaint, reassignComplaint } =
     useRequest();
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -213,6 +214,15 @@ export const PendingComplaintsPage = () => {
     loadComplaints();
   }, [loadComplaints]);
 
+  useRealtimeComplaints({
+    onAssigned: () => {
+      loadComplaints();
+    },
+    onStatusChanged: () => {
+      loadComplaints();
+    },
+  });
+
   useEffect(() => {
     const params = {};
 
@@ -243,6 +253,17 @@ export const PendingComplaintsPage = () => {
       setAssigningId(complaintId);
       await assignComplaint(complaintId, operatorId);
       setSuccessMessage("Complaint assigned successfully.");
+      await loadComplaints();
+    } finally {
+      setAssigningId(null);
+    }
+  };
+
+  const handleReassign = async (complaintId) => {
+    try {
+      setAssigningId(complaintId);
+      await reassignComplaint(complaintId);
+      setSuccessMessage("Auto-assignment retried successfully.");
       await loadComplaints();
     } finally {
       setAssigningId(null);
@@ -451,6 +472,11 @@ export const PendingComplaintsPage = () => {
                           Reported by {complaint.User?.name || "Citizen"} on {" "}
                           {formatters.formatDate(complaint.requested_at)}
                         </p>
+                        {complaint.assignment_reason && (
+                          <p className="mt-1 text-xs text-neutral-500 dark:text-slate-400">
+                            {complaint.assignment_reason}
+                          </p>
+                        )}
                       </div>
 
                       {complaint.status === "PENDING" ? (
@@ -498,6 +524,21 @@ export const PendingComplaintsPage = () => {
                             <p className="text-xs text-neutral-500 dark:text-slate-400">
                               Assigned to {complaint.assignedOperator.name}
                             </p>
+                          )}
+                          {["AUTO", "ESCALATED"].includes(
+                            complaint.assignment_strategy,
+                          ) && complaint.status !== "IN_PROGRESS" && complaint.status !== "RESOLVED" && (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleReassign(complaint.id);
+                              }}
+                              loading={assigningId === complaint.id}
+                            >
+                              Reassign
+                            </Button>
                           )}
                         </div>
                       )}

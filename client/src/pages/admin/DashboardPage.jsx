@@ -21,6 +21,7 @@ import HeatmapView from "../../components/admin/HeatmapView";
 import OperatorPerformance from "../../components/admin/OperatorPerformance";
 import AdminLocationsMap from "../../components/admin/AdminLocationsMap";
 import useRequest from "../../hooks/useRequest";
+import useRealtimeComplaints from "../../hooks/useRealtimeComplaints";
 import requestService from "../../services/requestService";
 import { formatters } from "../../utils/formatters";
 
@@ -59,6 +60,47 @@ export const AdminDashboardPage = () => {
   useEffect(() => {
     getAllRequests();
   }, [getAllRequests]);
+
+  useRealtimeComplaints({
+    onAssigned: async () => {
+      await Promise.allSettled([
+        getAllRequests(),
+        requestService.getAdminAnalytics().then((response) =>
+          setAnalyticsData({
+            dailyCounts: response?.dailyCounts || [],
+            categoryStats: response?.categoryStats || [],
+            statusStats: response?.statusStats || [],
+          }),
+        ),
+        requestService.getOperatorPerformance().then((response) =>
+          setOperatorStats(response?.data || response || []),
+        ),
+        requestService.getOverdueComplaints().then((response) => {
+          setOverdueComplaints(response?.data || response || []);
+          if (response?.thresholdHours) setOverdueThreshold(response.thresholdHours);
+        }),
+      ]);
+    },
+    onStatusChanged: async () => {
+      await Promise.allSettled([
+        getAllRequests(),
+        requestService.getAdminAnalytics().then((response) =>
+          setAnalyticsData({
+            dailyCounts: response?.dailyCounts || [],
+            categoryStats: response?.categoryStats || [],
+            statusStats: response?.statusStats || [],
+          }),
+        ),
+        requestService.getOperatorPerformance().then((response) =>
+          setOperatorStats(response?.data || response || []),
+        ),
+        requestService.getOverdueComplaints().then((response) => {
+          setOverdueComplaints(response?.data || response || []);
+          if (response?.thresholdHours) setOverdueThreshold(response.thresholdHours);
+        }),
+      ]);
+    },
+  });
 
   useEffect(() => {
     const loadAnalytics = async () => {

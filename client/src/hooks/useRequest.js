@@ -270,6 +270,24 @@ export const useRequest = () => {
     }
   }, []);
 
+  const reassignComplaint = useCallback(async (requestId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await requestService.reassignComplaint(requestId);
+      return response;
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Failed to reassign complaint";
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     // State
     requests,
@@ -291,6 +309,7 @@ export const useRequest = () => {
     getAllRequests,
     getAdminPendingComplaints,
     assignComplaint,
+    reassignComplaint,
   };
 };
 

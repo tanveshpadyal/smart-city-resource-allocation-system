@@ -19,8 +19,8 @@ const ContractorArea = require("./ContractorArea")(sequelize, DataTypes);
 // ============================================
 // USER ASSOCIATIONS
 // ============================================
-User.hasMany(Request, { foreignKey: "user_id" });
-Request.belongsTo(User, { foreignKey: "user_id" });
+User.hasMany(Request, { foreignKey: "user_id", as: "submittedComplaints" });
+Request.belongsTo(User, { foreignKey: "user_id", as: "User" });
 
 User.hasMany(ActionLog, { foreignKey: "actor_id" });
 ActionLog.belongsTo(User, { foreignKey: "actor_id" });
