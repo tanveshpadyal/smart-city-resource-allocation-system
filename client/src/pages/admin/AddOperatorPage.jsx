@@ -62,16 +62,6 @@ export const AddOperatorPage = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <span className="mb-2 inline-flex rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">
-            Operator
-          </span>
-          <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl dark:text-slate-200">Add Operator</h1>
-          <p className="mt-1 text-neutral-600 dark:text-slate-400">
-            Create a new operator account
-          </p>
-        </div>
-
         {error && <ErrorAlert message={error} onClose={() => setError("")} />}
         {success && (
           <SuccessAlert message={success} onClose={() => setSuccess("")} />

@@ -327,18 +327,7 @@ export const PendingComplaintsPage = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <span className="mb-2 inline-flex rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">
-              Complaints
-            </span>
-            <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl dark:text-slate-200">
-              Complaint Queue
-            </h1>
-            <p className="mt-1 text-neutral-600 dark:text-slate-400">
-              View all complaints, filter by status, and assign pending ones
-            </p>
-          </div>
+        <div className="flex justify-end">
           <Button variant="secondary" size="sm" onClick={handleExport} loading={exporting}>
             Export as CSV
           </Button>

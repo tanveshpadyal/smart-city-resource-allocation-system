@@ -132,18 +132,6 @@ export const OperatorProfilePage = () => {
   return (
     <OperatorLayout>
       <div className="space-y-6">
-        <div>
-          <span className="mb-2 inline-flex rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">
-            Profile
-          </span>
-          <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl dark:text-slate-200">
-            Operator Profile
-          </h1>
-          <p className="mt-1 text-neutral-600 dark:text-slate-400">
-            Performance and workload overview.
-          </p>
-        </div>
-
         <div className="rounded-lg border border-neutral-200 bg-white p-6 shadow-md shadow-slate-200/70 dark:border-slate-800 dark:bg-[#020617] dark:shadow-black/40">
           <div className="flex flex-wrap items-center gap-4">
             <div className="relative h-16 w-16">

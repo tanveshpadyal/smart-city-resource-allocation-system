@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import useAuthStore from "./store/authStore";
 import config from "./config";
 import { RoleGuard } from "./components/ProtectedRoute";
+import NotificationCenter from "./components/common/NotificationCenter";
 import ChatWidget from "./components/chat/ChatWidget";
 
 // Pages - Auth
@@ -46,6 +47,7 @@ function App() {
   return (
     <BrowserRouter>
       <>
+        <NotificationCenter />
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />

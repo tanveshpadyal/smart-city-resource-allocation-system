@@ -3,7 +3,6 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Menu,
   Moon,
   Sun,
   X,
@@ -150,15 +149,6 @@ const Sidebar = ({
           </div>
         </div>
       </aside>
-
-      <button
-        type="button"
-        onClick={() => setSidebarOpen(true)}
-        className="fixed bottom-4 right-4 z-20 inline-flex h-11 w-11 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg transition-transform hover:bg-indigo-700 active:scale-[0.96] dark:bg-indigo-500 dark:hover:bg-indigo-400 lg:hidden"
-        aria-label="Open sidebar"
-      >
-        <Menu size={18} />
-      </button>
     </>
   );
 };

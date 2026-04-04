@@ -30,7 +30,7 @@ const bindCoreEvents = () => {
     });
   });
 
-  ["complaint:assigned", "complaint:status-changed"].forEach((event) => {
+  ["complaint:created", "complaint:assigned", "complaint:status-changed"].forEach((event) => {
     socket.on(event, (payload) => emitToListeners(event, payload));
   });
 

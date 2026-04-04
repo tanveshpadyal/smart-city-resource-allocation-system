@@ -27,12 +27,27 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     if (!isAuthenticated || !user?.id) return undefined;
 
+    const unsubscribeCreated = socketService.on("complaint:created", (payload) => {
+      if (user.role === "ADMIN") {
+        pushNotification({
+          type: "info",
+          title: "New complaint registered",
+          message: payload?.message || "A citizen submitted a new complaint.",
+          link: payload?.complaintId ? `/complaints/${payload.complaintId}` : null,
+        });
+      }
+    });
+
     const unsubscribeAssigned = socketService.on("complaint:assigned", (payload) => {
       if (payload?.assignedTo === user.id) {
         pushNotification({
           type: "success",
           title: "Complaint assigned",
-          message: `A complaint has been assigned to you${payload.assignedOperator?.name ? "" : ""}.`,
+          message:
+            payload?.complaintCategory && payload?.status
+              ? `${payload.complaintCategory} complaint is now assigned to you.`
+              : "A complaint has been assigned to you.",
+          link: payload?.complaintId ? `/complaints/${payload.complaintId}` : null,
         });
         return;
       }
@@ -44,6 +59,7 @@ export const SocketProvider = ({ children }) => {
           message: payload.assignedOperator?.name
             ? `Your complaint was assigned to ${payload.assignedOperator.name}.`
             : "Your complaint was assigned.",
+          link: payload?.complaintId ? `/complaints/${payload.complaintId}` : null,
         });
         return;
       }
@@ -55,6 +71,7 @@ export const SocketProvider = ({ children }) => {
           message: payload.assignedOperator?.name
             ? `Complaint assigned to ${payload.assignedOperator.name}.`
             : "A complaint assignment was updated.",
+          link: payload?.complaintId ? `/complaints/${payload.complaintId}` : null,
         });
       }
     });
@@ -73,6 +90,7 @@ export const SocketProvider = ({ children }) => {
             message: readableStatus
               ? `Complaint moved to ${readableStatus}.`
               : "A complaint status changed.",
+            link: payload?.complaintId ? `/complaints/${payload.complaintId}` : null,
           });
           return;
         }
@@ -84,12 +102,14 @@ export const SocketProvider = ({ children }) => {
             message: readableStatus
               ? `A complaint moved to ${readableStatus}.`
               : "A complaint status changed.",
+            link: payload?.complaintId ? `/complaints/${payload.complaintId}` : null,
           });
         }
       },
     );
 
     return () => {
+      unsubscribeCreated();
       unsubscribeAssigned();
       unsubscribeStatus();
     };

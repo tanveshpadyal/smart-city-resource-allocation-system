@@ -70,20 +70,6 @@ const OperatorDashboard = ({ requests = [], loading = false }) => {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6">
-      <section className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <span className="mb-2 inline-flex rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">
-            Dashboard
-          </span>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-200">
-            Operator Dashboard
-          </h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Clean view of your queue, progress, and SLA pressure.
-          </p>
-        </div>
-      </section>
-
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {loading ? (
           <>

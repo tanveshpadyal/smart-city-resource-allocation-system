@@ -24,9 +24,21 @@ const ChatWidget = () => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const messageListRef = useRef(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
+    if (!isOpen) return;
+
+    const container = messageListRef.current;
+    if (container) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: "smooth",
+      });
+      return;
+    }
+
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isOpen]);
 
@@ -80,9 +92,9 @@ const ChatWidget = () => {
   };
 
   return (
-    <div className="pointer-events-none fixed bottom-5 right-5 z-50 flex flex-col items-end gap-4">
+    <div className="pointer-events-none fixed bottom-5 right-4 z-[140] flex flex-col items-end gap-3 md:right-5 md:gap-4">
       {isOpen ? (
-        <div className="pointer-events-auto w-[calc(100vw-2rem)] max-w-sm overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950">
+        <div className="pointer-events-auto flex h-[min(34rem,calc(100vh-8rem))] w-[min(calc(100vw-2rem),22rem)] max-w-sm flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950 md:h-[min(38rem,calc(100vh-7rem))] md:w-[calc(100vw-2rem)] md:rounded-[28px]">
           <div className="bg-gradient-to-br from-sky-600 via-blue-700 to-cyan-500 px-5 py-4 text-white">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3">
@@ -107,7 +119,10 @@ const ChatWidget = () => {
             </div>
           </div>
 
-          <div className="max-h-[24rem] space-y-3 overflow-y-auto bg-slate-50/80 px-4 py-4 dark:bg-slate-900">
+          <div
+            ref={messageListRef}
+            className="min-h-0 flex-1 space-y-3 overflow-y-auto bg-slate-50/80 px-4 py-4 dark:bg-slate-900"
+          >
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -172,10 +187,10 @@ const ChatWidget = () => {
       <button
         type="button"
         onClick={() => setIsOpen((current) => !current)}
-        className="pointer-events-auto inline-flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 via-blue-600 to-cyan-500 text-white shadow-[0_18px_40px_rgba(37,99,235,0.45)]"
+        className="pointer-events-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 via-blue-600 to-cyan-500 text-white shadow-[0_18px_40px_rgba(37,99,235,0.45)] md:h-16 md:w-16"
         aria-label="Open Smart City Assistant"
       >
-        <MessageCircle size={26} />
+        <MessageCircle size={20} className="md:h-[26px] md:w-[26px]" />
       </button>
     </div>
   );

@@ -123,18 +123,6 @@ export const AdminUsersPage = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <span className="mb-2 inline-flex rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">
-            Users
-          </span>
-          <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl dark:text-slate-200">
-            User Management
-          </h1>
-          <p className="mt-1 text-neutral-600 dark:text-slate-400">
-            View all registered users and their roles
-          </p>
-        </div>
-
         <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-md shadow-slate-200/70 dark:border-slate-800 dark:bg-[#020617] dark:shadow-black/40">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-col gap-2 sm:flex-row">

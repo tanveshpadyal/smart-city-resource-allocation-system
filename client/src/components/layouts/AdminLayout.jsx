@@ -12,7 +12,6 @@ import {
   Clock3,
   LayoutDashboard,
   LogOut,
-  Menu,
   Moon,
   Sun,
   UserPlus,
@@ -22,6 +21,7 @@ import {
 import useAuth from "../../hooks/useAuth";
 import { useTheme } from "../../context/ThemeContext";
 import TopUtilityBar from "./TopUtilityBar";
+import AppFooter from "./AppFooter";
 
 export const AdminLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -204,19 +204,14 @@ export const AdminLayout = ({ children }) => {
         }`}
       >
         <div className="mx-auto w-full max-w-[1400px] px-4 py-5 md:px-6">
-          <TopUtilityBar userLabel={user?.name || "Administrator"} />
+          <TopUtilityBar
+            onOpenSidebar={() => setSidebarOpen(true)}
+            sidebarOpen={sidebarOpen}
+          />
           {children}
+          <AppFooter />
         </div>
       </main>
-
-      <button
-        type="button"
-        onClick={() => setSidebarOpen(true)}
-        className="fixed bottom-4 right-4 z-20 inline-flex h-11 w-11 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg transition-transform hover:bg-indigo-700 active:scale-[0.96] dark:bg-indigo-500 dark:hover:bg-indigo-400 lg:hidden"
-        aria-label="Open sidebar"
-      >
-        <Menu size={18} />
-      </button>
     </div>
   );
 };

@@ -13,6 +13,7 @@ import {
 import useAuth from "../../hooks/useAuth";
 import Sidebar from "../operator/Sidebar";
 import TopUtilityBar from "./TopUtilityBar";
+import AppFooter from "./AppFooter";
 
 export const OperatorLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -71,8 +72,12 @@ export const OperatorLayout = ({ children }) => {
         }`}
       >
         <div className="mx-auto w-full max-w-[1400px] px-4 py-5 md:px-6">
-          <TopUtilityBar userLabel={user?.name || "Operator"} />
+          <TopUtilityBar
+            onOpenSidebar={() => setSidebarOpen(true)}
+            sidebarOpen={sidebarOpen}
+          />
           {children}
+          <AppFooter />
         </div>
       </main>
     </div>

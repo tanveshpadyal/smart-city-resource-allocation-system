@@ -5,6 +5,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
+import AppFooter from "./AppFooter";
 
 export const MainLayout = ({ children }) => {
   const location = useLocation();
@@ -62,11 +63,7 @@ export const MainLayout = ({ children }) => {
         {children}
       </main>
 
-      <footer className="mt-12 border-t border-slate-200/80 bg-white/95 dark:border-slate-800 dark:bg-[#020617]/95">
-        <div className="mx-auto max-w-7xl px-4 py-8 text-center text-sm text-slate-600 dark:text-slate-300 sm:px-6 lg:px-8">
-          &copy; 2026 Smart City Complaint Management System
-        </div>
-      </footer>
+      <AppFooter />
     </div>
   );
 };

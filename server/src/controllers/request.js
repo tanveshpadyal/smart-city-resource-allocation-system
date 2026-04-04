@@ -15,6 +15,7 @@ const {
 } = require("../services/complaintAssignment");
 const { SLA_HOURS, updateSlaBreaches } = require("../services/slaService");
 const {
+  emitComplaintCreated,
   emitComplaintAssigned,
   emitComplaintStatusChanged,
 } = require("../sockets");
@@ -249,6 +250,10 @@ const createRequest = async (req, res) => {
     if (assignmentNotificationPayload) {
       emitComplaintAssigned(assignmentNotificationPayload);
     }
+
+    emitComplaintCreated({
+      complaint: complaint.toJSON(),
+    });
 
     // ========== LOG COMPLAINT CREATION ==========
     await db.ActionLog.create({

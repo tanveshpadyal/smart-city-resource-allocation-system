@@ -26,18 +26,6 @@ const MyComplaints = ({
 }) => {
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6">
-      <section>
-        <span className="mb-2 inline-flex rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">
-          Complaints
-        </span>
-        <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-200">
-          My Complaints
-        </h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Manage your assignments with fast actions and clear status.
-        </p>
-      </section>
-
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-md shadow-slate-200/70 md:p-5 dark:border-slate-800 dark:bg-[#020617] dark:shadow-black/40">
         {loading ? (
           <ComplaintsSkeleton />

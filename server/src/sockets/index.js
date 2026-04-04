@@ -140,6 +140,27 @@ const emitComplaintAssigned = ({
   io.to(`complaint:${complaint.id}`).emit("complaint:assigned", payload);
 }
 
+const emitComplaintCreated = ({
+  complaint,
+}) => {
+  if (!io || !complaint) return;
+
+  const payload = buildComplaintPayload(complaint, {
+    eventType: "complaint:created",
+    message: complaint.description
+      ? `${complaint.complaint_category} complaint registered: ${complaint.description.slice(0, 70)}`
+      : `${complaint.complaint_category} complaint registered.`,
+  });
+
+  emitToRoleAndUsers({
+    event: "complaint:created",
+    payload,
+    userIds: [complaint.user_id],
+  });
+
+  io.to(`complaint:${complaint.id}`).emit("complaint:created", payload);
+};
+
 const emitComplaintStatusChanged = ({
   complaint,
   changedBy,
@@ -163,6 +184,7 @@ const emitComplaintStatusChanged = ({
 module.exports = {
   initSocketServer,
   getIO,
+  emitComplaintCreated,
   emitComplaintAssigned,
   emitComplaintStatusChanged,
 };

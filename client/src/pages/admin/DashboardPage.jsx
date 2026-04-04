@@ -326,19 +326,10 @@ export const AdminDashboardPage = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <span className="mb-2 inline-flex rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">
-              Dashboard
-            </span>
-            <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl dark:text-slate-200">Admin Overview</h1>
-            <p className="text-neutral-600 dark:text-slate-400">Manage and track complaints</p>
-          </div>
+        <div className="flex justify-end">
           <Button
             variant="secondary"
             size="sm"
-            className="self-start md:self-auto"
             onClick={() => handleExport("all")}
             loading={exporting}
           >
@@ -346,7 +337,6 @@ export const AdminDashboardPage = () => {
           </Button>
         </div>
 
-        {/* KPI Cards */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard
             title="Total Complaints"
