@@ -200,3 +200,7 @@ Database models synced successfully
 Database connected successfully
 [SLA] Scheduler started (15-minute interval)
 [31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting child process[39m
+[32m[nodemon] starting `node src/app.js`[39m
+[dotenv@17.2.4] injecting env (11) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.2.4] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }

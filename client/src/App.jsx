@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import useAuthStore from "./store/authStore";
 import config from "./config";
 import { RoleGuard } from "./components/ProtectedRoute";
+import ChatWidget from "./components/chat/ChatWidget";
 
 // Pages - Auth
 import LandingPage from "./pages/LandingPage";
@@ -44,143 +45,146 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+      <>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
-        {/* Protected Routes - Citizen */}
-        <Route
-          path="/citizen/dashboard"
-          element={
-            <RoleGuard requiredRoles={[config.roles.CITIZEN]}>
-              <CitizenDashboardPage />
-            </RoleGuard>
-          }
-        />
-        <Route
-          path="/citizen/create-request"
-          element={
-            <RoleGuard requiredRoles={[config.roles.CITIZEN]}>
-              <CreateRequestPage />
-            </RoleGuard>
-          }
-        />
-        <Route
-          path="/citizen/my-requests"
-          element={
-            <RoleGuard requiredRoles={[config.roles.CITIZEN]}>
-              <MyRequestsPage />
-            </RoleGuard>
-          }
-        />
-        {/* Protected Routes - Operator */}
-        <Route
-          path="/operator/dashboard"
-          element={
-            <RoleGuard
-              requiredRoles={[config.roles.OPERATOR, config.roles.ADMIN]}
-            >
-              <OperatorDashboardPage />
-            </RoleGuard>
-          }
-        />
-        <Route
-          path="/operator/complaints"
-          element={
-            <RoleGuard
-              requiredRoles={[config.roles.OPERATOR, config.roles.ADMIN]}
-            >
-              <OperatorComplaintsPage />
-            </RoleGuard>
-          }
-        />
-        <Route
-          path="/operator/profile"
-          element={
-            <RoleGuard
-              requiredRoles={[config.roles.OPERATOR, config.roles.ADMIN]}
-            >
-              <OperatorProfilePage />
-            </RoleGuard>
-          }
-        />
-        <Route
-          path="/operator/complaint/:id"
-          element={
-            <RoleGuard
-              requiredRoles={[config.roles.OPERATOR, config.roles.ADMIN]}
-            >
-              <ComplaintDetail />
-            </RoleGuard>
-          }
-        />
+          {/* Protected Routes - Citizen */}
+          <Route
+            path="/citizen/dashboard"
+            element={
+              <RoleGuard requiredRoles={[config.roles.CITIZEN]}>
+                <CitizenDashboardPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/citizen/create-request"
+            element={
+              <RoleGuard requiredRoles={[config.roles.CITIZEN]}>
+                <CreateRequestPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/citizen/my-requests"
+            element={
+              <RoleGuard requiredRoles={[config.roles.CITIZEN]}>
+                <MyRequestsPage />
+              </RoleGuard>
+            }
+          />
+          {/* Protected Routes - Operator */}
+          <Route
+            path="/operator/dashboard"
+            element={
+              <RoleGuard
+                requiredRoles={[config.roles.OPERATOR, config.roles.ADMIN]}
+              >
+                <OperatorDashboardPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/operator/complaints"
+            element={
+              <RoleGuard
+                requiredRoles={[config.roles.OPERATOR, config.roles.ADMIN]}
+              >
+                <OperatorComplaintsPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/operator/profile"
+            element={
+              <RoleGuard
+                requiredRoles={[config.roles.OPERATOR, config.roles.ADMIN]}
+              >
+                <OperatorProfilePage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/operator/complaint/:id"
+            element={
+              <RoleGuard
+                requiredRoles={[config.roles.OPERATOR, config.roles.ADMIN]}
+              >
+                <ComplaintDetail />
+              </RoleGuard>
+            }
+          />
 
-        {/* Protected Routes - Admin */}
-        <Route
-          path="/admin/dashboard"
-          element={
-            <RoleGuard requiredRoles={[config.roles.ADMIN]}>
-              <AdminDashboardPage />
-            </RoleGuard>
-          }
-        />
-        <Route
-          path="/admin/pending-complaints"
-          element={
-            <RoleGuard requiredRoles={[config.roles.ADMIN]}>
-              <PendingComplaintsPage />
-            </RoleGuard>
-          }
-        />
-        <Route
-          path="/admin/users"
-          element={
-            <RoleGuard requiredRoles={[config.roles.ADMIN]}>
-              <AdminUsersPage />
-            </RoleGuard>
-          }
-        />
-        <Route
-          path="/admin/activity-logs"
-          element={
-            <RoleGuard requiredRoles={[config.roles.ADMIN]}>
-              <ActivityLogsPage />
-            </RoleGuard>
-          }
-        />
-        <Route
-          path="/admin/add-operator"
-          element={
-            <RoleGuard requiredRoles={[config.roles.ADMIN]}>
-              <AddOperatorPage />
-            </RoleGuard>
-          }
-        />
+          {/* Protected Routes - Admin */}
+          <Route
+            path="/admin/dashboard"
+            element={
+              <RoleGuard requiredRoles={[config.roles.ADMIN]}>
+                <AdminDashboardPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/admin/pending-complaints"
+            element={
+              <RoleGuard requiredRoles={[config.roles.ADMIN]}>
+                <PendingComplaintsPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <RoleGuard requiredRoles={[config.roles.ADMIN]}>
+                <AdminUsersPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/admin/activity-logs"
+            element={
+              <RoleGuard requiredRoles={[config.roles.ADMIN]}>
+                <ActivityLogsPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/admin/add-operator"
+            element={
+              <RoleGuard requiredRoles={[config.roles.ADMIN]}>
+                <AddOperatorPage />
+              </RoleGuard>
+            }
+          />
 
-        {/* Complaint Timeline (All Roles) */}
-        <Route
-          path="/complaints/:id"
-          element={
-            <RoleGuard
-              requiredRoles={[
-                config.roles.CITIZEN,
-                config.roles.OPERATOR,
-                config.roles.ADMIN,
-              ]}
-            >
-              <ComplaintDetail />
-            </RoleGuard>
-          }
-        />
+          {/* Complaint Timeline (All Roles) */}
+          <Route
+            path="/complaints/:id"
+            element={
+              <RoleGuard
+                requiredRoles={[
+                  config.roles.CITIZEN,
+                  config.roles.OPERATOR,
+                  config.roles.ADMIN,
+                ]}
+              >
+                <ComplaintDetail />
+              </RoleGuard>
+            }
+          />
 
-        {/* Error Routes */}
-        <Route path="/unauthorized" element={<UnauthorizedPage />} />
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/*" element={<NotFoundPage />} />
-      </Routes>
+          {/* Error Routes */}
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/*" element={<NotFoundPage />} />
+        </Routes>
+        <ChatWidget />
+      </>
     </BrowserRouter>
   );
 }

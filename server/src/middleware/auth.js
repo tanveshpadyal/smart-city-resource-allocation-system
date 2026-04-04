@@ -16,7 +16,12 @@ const authenticateToken = (req, res, next) => {
     const authHeader = req.headers["authorization"];
     const token = authHeader && authHeader.split(" ")[1]; // "Bearer <token>"
 
+    console.log(`[AUTH] Attempting to authenticate ${req.method} ${req.path}`);
+    console.log(`[AUTH] Auth header present: ${!!authHeader}`);
+    console.log(`[AUTH] Token present: ${!!token}`);
+
     if (!token) {
+      console.log("[AUTH] Rejected: No token provided");
       return res.status(401).json({
         success: false,
         error: "Access denied. No token provided.",
@@ -28,12 +33,17 @@ const authenticateToken = (req, res, next) => {
     const decoded = authUtils.verifyAccessToken(token);
 
     if (!decoded) {
-      return res.status(403).json({
+      console.log("[AUTH] Rejected: Invalid or expired token");
+      return res.status(401).json({
         success: false,
         error: "Invalid or expired token.",
         code: "INVALID_TOKEN",
       });
     }
+
+    console.log(
+      `[AUTH] Authenticated: userId=${decoded.userId}, role=${decoded.role}`,
+    );
 
     // Attach user info to request
     req.user = {
@@ -43,7 +53,7 @@ const authenticateToken = (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error("Auth middleware error:", error);
+    console.error("[AUTH] Middleware error:", error);
     return res.status(500).json({
       success: false,
       error: "Authentication error",
@@ -197,7 +207,10 @@ const authRateLimiter = (() => {
 
     // Count only failed auth attempts. Successful auth clears the counter.
     res.on("finish", () => {
-      const latest = attempts.get(key) || { count: 0, resetTime: now + WINDOW_MS };
+      const latest = attempts.get(key) || {
+        count: 0,
+        resetTime: now + WINDOW_MS,
+      };
 
       if (res.statusCode >= 400) {
         latest.count += 1;

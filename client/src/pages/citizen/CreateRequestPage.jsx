@@ -148,6 +148,7 @@ export const CreateRequestPage = () => {
       newErrors.lat = "Invalid latitude (-90 to 90)";
     if (!validators.isValidLongitude(formData.lng))
       newErrors.lng = "Invalid longitude (-180 to 180)";
+    if (!formData.image) newErrors.image = "Complaint photo is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -161,6 +162,7 @@ export const CreateRequestPage = () => {
       "pincode",
       "lat",
       "lng",
+      "image",
     ];
     for (const key of order) {
       if (newErrors[key]) {
@@ -208,6 +210,7 @@ export const CreateRequestPage = () => {
         ...prev,
         image: dataUrl,
       }));
+      setErrors((prev) => ({ ...prev, image: undefined }));
     };
 
     reader.readAsDataURL(file);
@@ -229,6 +232,7 @@ export const CreateRequestPage = () => {
         pincode: !validators.isValidPincode(formData.pincode),
         lat: !validators.isValidLatitude(formData.lat),
         lng: !validators.isValidLongitude(formData.lng),
+        image: !formData.image,
       });
       return;
     }
@@ -473,13 +477,16 @@ export const CreateRequestPage = () => {
 
             <div>
               <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-slate-300">
-                Photo (Optional)
+                Photo
+                <span className="ml-1 text-red-600 dark:text-rose-400">*</span>
               </label>
               <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
                 <input
+                  id="image"
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
+                  required
                   className="block w-full text-sm text-neutral-500 dark:text-slate-400
                     file:mr-4 file:py-2 file:px-4
                     file:rounded-md file:border-0
@@ -507,6 +514,11 @@ export const CreateRequestPage = () => {
                     className="h-24 w-24 rounded-lg border border-neutral-200 object-cover dark:border-slate-700"
                   />
                 </div>
+              )}
+              {errors.image && (
+                <p className="mt-2 text-sm text-red-600 dark:text-rose-400">
+                  {errors.image}
+                </p>
               )}
             </div>
 

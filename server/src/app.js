@@ -23,6 +23,7 @@ const allocationRoutes = require("./routes/allocations");
 const providerRoutes = require("./routes/providers");
 const adminLogsRoutes = require("./routes/adminLogs");
 const operatorRoutes = require("./routes/operator");
+const chatRoutes = require("./routes/chat");
 
 const app = express();
 const server = http.createServer(app);
@@ -70,7 +71,10 @@ app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 // REQUEST LOGGING (Optional)
 // ============================================
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path}`);
+  console.log(`${req.method} ${req.path} | Headers:`, {
+    authorization: req.headers.authorization ? "present" : "missing",
+    contentType: req.headers["content-type"],
+  });
   next();
 });
 
@@ -97,6 +101,7 @@ app.use("/api/allocations", allocationRoutes);
 app.use("/api/providers", providerRoutes);
 app.use("/api/admin", adminLogsRoutes);
 app.use("/api/operator", operatorRoutes);
+app.use("/api/chat", chatRoutes);
 
 // ============================================
 // 404 HANDLER

@@ -178,6 +178,10 @@ export const ComplaintDetail = () => {
       setActionError("Please add a short resolution note.");
       return;
     }
+    if (!resolutionImage) {
+      setActionError("Please upload a resolution image before resolving.");
+      return;
+    }
     setActionError("");
     setActionLoading(true);
     try {
@@ -228,6 +232,7 @@ export const ComplaintDetail = () => {
       const dataUrl = canvas.toDataURL("image/jpeg", 0.75);
 
       setResolutionImage(dataUrl);
+      setActionError("");
     };
 
     reader.readAsDataURL(file);
@@ -367,13 +372,15 @@ export const ComplaintDetail = () => {
                 />
                 <div>
                   <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-slate-300">
-                    Resolution Photo (Optional)
+                    Resolution Photo
+                    <span className="ml-1 text-red-600 dark:text-rose-400">*</span>
                   </label>
                   <div className="flex items-center gap-3">
                     <input
                       type="file"
                       accept="image/*"
                       onChange={handleResolutionImageChange}
+                      required
                       className="block w-full text-sm text-neutral-500 dark:text-slate-400 file:mr-4 file:rounded-md file:border-0 file:bg-primary-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary-700 hover:file:bg-primary-100 dark:file:bg-indigo-500/20 dark:file:text-indigo-300 dark:hover:file:bg-indigo-500/30"
                     />
                     {resolutionImage && (
@@ -394,6 +401,11 @@ export const ComplaintDetail = () => {
                         className="h-auto max-w-xs rounded-lg border border-neutral-200 dark:border-slate-700"
                       />
                     </div>
+                  )}
+                  {!resolutionImage && (
+                    <p className="mt-2 text-xs text-red-600 dark:text-rose-400">
+                      Resolution image is required to mark this complaint resolved.
+                    </p>
                   )}
                 </div>
                 <button

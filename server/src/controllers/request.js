@@ -73,6 +73,14 @@ const createRequest = async (req, res) => {
       });
     }
 
+    if (!image) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required field: image",
+        code: "MISSING_FIELDS",
+      });
+    }
+
     // ========== VERIFY OR CREATE LOCATION ==========
     let locationRecord = null;
     let locationPayload = null;
@@ -958,6 +966,14 @@ const resolveComplaint = async (req, res) => {
       return res.status(400).json({
         success: false,
         error: "Missing required field: note",
+        code: "MISSING_FIELDS",
+      });
+    }
+
+    if (!image) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required field: image",
         code: "MISSING_FIELDS",
       });
     }

@@ -1,5 +1,7 @@
 # Registration Fix & System Setup Guide
 
+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
+
 ## Problem
 
 Your registration endpoint was failing because:
