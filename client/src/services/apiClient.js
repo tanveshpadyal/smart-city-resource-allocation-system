@@ -8,6 +8,23 @@ import axios from "axios";
 import { config } from "../config";
 import useAuthStore from "../store/authStore";
 
+const TOKEN_ERROR_CODES = new Set(["NO_TOKEN", "INVALID_TOKEN", "AUTH_ERROR"]);
+
+const buildSessionExpiredError = (refreshError) => {
+  const error = new Error("Session expired. Please log in again.");
+  error.code = refreshError?.response?.data?.code || "SESSION_EXPIRED";
+  error.response = {
+    ...refreshError?.response,
+    data: {
+      ...(refreshError?.response?.data || {}),
+      error: "Session expired. Please log in again.",
+      code: error.code,
+    },
+  };
+  error.cause = refreshError;
+  return error;
+};
+
 const apiClient = axios.create({
   baseURL: config.api.baseURL,
   timeout: config.api.timeout,
@@ -36,9 +53,13 @@ apiClient.interceptors.response.use(
     const isAuthEndpoint = requestUrl.startsWith("/auth/");
     const statusCode = error.response?.status;
     const errorCode = error.response?.data?.code;
+    const errorMessage = error.response?.data?.error || "";
     const isTokenExpiredError =
-      statusCode === 401 ||
-      (statusCode === 403 && errorCode === "INVALID_TOKEN");
+      !isAuthEndpoint &&
+      ((statusCode === 401 &&
+        (TOKEN_ERROR_CODES.has(errorCode) ||
+          (!errorCode && /token/i.test(errorMessage)))) ||
+        (statusCode === 403 && errorCode === "INVALID_TOKEN"));
 
     if (isTokenExpiredError && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
@@ -61,13 +82,13 @@ apiClient.interceptors.response.use(
           .catch((refreshError) => {
             useAuthStore.getState().logout();
             window.location.href = config.routes.public.login;
-            return Promise.reject(refreshError);
+            return Promise.reject(buildSessionExpiredError(refreshError));
           });
       }
 
       useAuthStore.getState().logout();
       window.location.href = config.routes.public.login;
-      return Promise.reject(error);
+      return Promise.reject(buildSessionExpiredError(error));
     }
 
     return Promise.reject(error);

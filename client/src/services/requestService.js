@@ -211,6 +211,14 @@ const requestService = {
   },
 
   /**
+   * Remove a city area
+   */
+  deleteAdminArea: async (areaId) => {
+    const response = await apiClient.delete(`/requests/admin/areas/${areaId}`);
+    return response.data;
+  },
+
+  /**
    * Export complaints as CSV (admin)
    */
   exportComplaints: async (type = "all") => {

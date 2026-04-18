@@ -4,6 +4,7 @@ import { InlineSpinner } from "../../components/common/Spinner";
 import { ErrorAlert, SuccessAlert } from "../../components/common/Alert";
 import { Button } from "../../components/common";
 import authService from "../../services/authService";
+import requestService from "../../services/requestService";
 import { formatters } from "../../utils/formatters";
 
 const roleBadgeClass = {
@@ -30,6 +31,7 @@ export const AdminUsersPage = () => {
   const [updatingId, setUpdatingId] = useState(null);
   const [savingAreasId, setSavingAreasId] = useState(null);
   const [areaDrafts, setAreaDrafts] = useState({});
+  const [masterAreas, setMasterAreas] = useState([]);
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const getRoleLabel = (role) => (role === "OPERATOR" ? "CONTRACTOR" : role);
@@ -62,6 +64,19 @@ export const AdminUsersPage = () => {
   useEffect(() => {
     loadUsers();
   }, [loadUsers]);
+
+  useEffect(() => {
+    const loadMasterAreas = async () => {
+      try {
+        const response = await requestService.getAdminAreas();
+        setMasterAreas(response?.data || response || []);
+      } catch {
+        setMasterAreas([]);
+      }
+    };
+
+    loadMasterAreas();
+  }, []);
 
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
@@ -101,6 +116,19 @@ export const AdminUsersPage = () => {
       .map((area) => area.trim().toLowerCase())
       .filter(Boolean)
       .filter((area, index, arr) => arr.indexOf(area) === index);
+
+  const toggleAreaDraft = (userId, areaName) => {
+    const normalizedArea = areaName.trim().toLowerCase();
+    const currentAreas = parseAreas(areaDrafts[userId] || "");
+    const nextAreas = currentAreas.includes(normalizedArea)
+      ? currentAreas.filter((area) => area !== normalizedArea)
+      : [...currentAreas, normalizedArea];
+
+    setAreaDrafts((prev) => ({
+      ...prev,
+      [userId]: nextAreas.join(", "),
+    }));
+  };
 
   const handleSaveAreas = async (user) => {
     try {
@@ -224,18 +252,46 @@ export const AdminUsersPage = () => {
                         </td>
                         <td className="min-w-80 px-4 py-3">
                           {user.role === "OPERATOR" ? (
-                            <input
-                              type="text"
-                              value={areaDrafts[user.id] ?? ""}
-                              onChange={(e) =>
-                                setAreaDrafts((prev) => ({
-                                  ...prev,
-                                  [user.id]: e.target.value,
-                                }))
-                              }
-                              placeholder="downtown, west zone"
-                              className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-700 focus:border-indigo-400 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
-                            />
+                            <div className="space-y-3">
+                              <input
+                                type="text"
+                                value={areaDrafts[user.id] ?? ""}
+                                onChange={(e) =>
+                                  setAreaDrafts((prev) => ({
+                                    ...prev,
+                                    [user.id]: e.target.value,
+                                  }))
+                                }
+                                placeholder="kharadi, baner"
+                                className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-700 focus:border-indigo-400 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                              />
+                              {masterAreas.length > 0 ? (
+                                <div className="flex flex-wrap gap-2">
+                                  {masterAreas.map((area) => {
+                                    const isSelected = parseAreas(
+                                      areaDrafts[user.id] || "",
+                                    ).includes(area.zone_name.trim().toLowerCase());
+
+                                    return (
+                                      <button
+                                        key={area.id}
+                                        type="button"
+                                        onClick={() =>
+                                          toggleAreaDraft(user.id, area.zone_name)
+                                        }
+                                        className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                                          isSelected
+                                            ? "bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:ring-indigo-500/40"
+                                            : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                                        }`}
+                                      >
+                                        {area.zone_name}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              ) : null}
+                            </div>
                           ) : (
                             <span className="text-neutral-400 dark:text-slate-500">
                               -

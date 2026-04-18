@@ -30,7 +30,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
-const AREA_COORDINATES = {
+const FALLBACK_AREA_COORDINATES = {
   Kothrud: { lat: 18.5074, lng: 73.8077, radius: 1200 },
   Warje: { lat: 18.4896, lng: 73.7987, radius: 1200 },
   Baner: { lat: 18.559, lng: 73.7868, radius: 1200 },
@@ -49,6 +49,9 @@ export const CreateRequestPage = () => {
     "Complaint created successfully! Redirecting...",
   );
   const [availableAreas, setAvailableAreas] = useState([]);
+  const [areaCoordinates, setAreaCoordinates] = useState(FALLBACK_AREA_COORDINATES);
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationHelp, setLocationHelp] = useState("");
   const [formData, setFormData] = useState({
     complaint_category: "",
     priority: "MEDIUM",
@@ -87,7 +90,28 @@ export const CreateRequestPage = () => {
           const dynamicAreas = rows
             .map((item) => item?.zone_name)
             .filter(Boolean);
+          const dynamicCoordinates = rows.reduce((acc, item) => {
+            const areaName = item?.zone_name;
+            const lat = Number(item?.latitude);
+            const lng = Number(item?.longitude);
+
+            if (!areaName || Number.isNaN(lat) || Number.isNaN(lng)) {
+              return acc;
+            }
+
+            acc[areaName] = {
+              lat,
+              lng,
+              radius: FALLBACK_AREA_COORDINATES[areaName]?.radius || 1200,
+            };
+            return acc;
+          }, {});
+
           setAvailableAreas(dynamicAreas);
+          setAreaCoordinates({
+            ...FALLBACK_AREA_COORDINATES,
+            ...dynamicCoordinates,
+          });
           return;
         }
       } catch {
@@ -103,6 +127,7 @@ export const CreateRequestPage = () => {
         "Shivajinagar",
         "Katraj",
       ]);
+      setAreaCoordinates(FALLBACK_AREA_COORDINATES);
     };
 
     loadAreas();
@@ -121,14 +146,14 @@ export const CreateRequestPage = () => {
     return null;
   };
 
-  const MapAreaFocus = ({ areaName }) => {
+  const MapAreaFocus = ({ areaName, coordinates }) => {
     const map = useMap();
 
     useEffect(() => {
-      if (!areaName || !AREA_COORDINATES[areaName]) return;
-      const { lat, lng } = AREA_COORDINATES[areaName];
+      if (!areaName || !coordinates[areaName]) return;
+      const { lat, lng } = coordinates[areaName];
       map.flyTo([lat, lng], 13, { duration: 0.8 });
-    }, [areaName, map]);
+    }, [areaName, coordinates, map]);
 
     return null;
   };
@@ -142,8 +167,9 @@ export const CreateRequestPage = () => {
     if (!formData.area) newErrors.area = "Area is required";
     if (!formData.address || formData.address.trim().length === 0)
       newErrors.address = "Address is required";
-    if (!validators.isValidPincode(formData.pincode))
-      newErrors.pincode = "Pincode must be 6 digits";
+    if (!validators.isValidSupportedPunePincode(formData.pincode))
+      newErrors.pincode =
+        "Pincode must be from the supported Pune pincode list";
     if (!validators.isValidLatitude(formData.lat))
       newErrors.lat = "Invalid latitude (-90 to 90)";
     if (!validators.isValidLongitude(formData.lng))
@@ -229,7 +255,7 @@ export const CreateRequestPage = () => {
         description: !formData.description || formData.description.trim().length === 0,
         area: !formData.area,
         address: !formData.address || formData.address.trim().length === 0,
-        pincode: !validators.isValidPincode(formData.pincode),
+        pincode: !validators.isValidSupportedPunePincode(formData.pincode),
         lat: !validators.isValidLatitude(formData.lat),
         lng: !validators.isValidLongitude(formData.lng),
         image: !formData.image,
@@ -291,13 +317,85 @@ export const CreateRequestPage = () => {
   };
 
   const handleAreaChange = (selectedArea) => {
-    const areaCenter = AREA_COORDINATES[selectedArea];
+    const areaCenter = areaCoordinates[selectedArea];
     setFormData((prev) => ({
       ...prev,
       area: selectedArea,
       lat: areaCenter ? areaCenter.lat.toFixed(6) : prev.lat,
       lng: areaCenter ? areaCenter.lng.toFixed(6) : prev.lng,
     }));
+    setErrors((prev) => ({
+      ...prev,
+      area: undefined,
+      pincode: validators.isValidSupportedPunePincode(formData.pincode)
+        ? undefined
+        : prev.pincode,
+    }));
+  };
+
+  const findNearestArea = (lat, lng) => {
+    let nearestArea = "";
+    let shortestDistance = Number.POSITIVE_INFINITY;
+
+    Object.entries(areaCoordinates).forEach(([areaName, coordinates]) => {
+      const distance = Math.hypot(coordinates.lat - lat, coordinates.lng - lng);
+      if (distance < shortestDistance) {
+        shortestDistance = distance;
+        nearestArea = areaName;
+      }
+    });
+
+    return shortestDistance < 0.08 ? nearestArea : "";
+  };
+
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationHelp("Current location is not supported in this browser.");
+      return;
+    }
+
+    setIsLocating(true);
+    setLocationHelp("");
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const nearestArea = findNearestArea(lat, lng);
+
+        setFormData((prev) => ({
+          ...prev,
+          area: nearestArea || prev.area,
+          lat: lat.toFixed(6),
+          lng: lng.toFixed(6),
+        }));
+        setErrors((prev) => ({
+          ...prev,
+          lat: undefined,
+          lng: undefined,
+          area: nearestArea ? undefined : prev.area,
+        }));
+        setLocationHelp(
+          nearestArea
+            ? `Current location captured. Nearest area matched: ${nearestArea}.`
+            : "Current location captured. Please confirm the nearest area manually.",
+        );
+        setIsLocating(false);
+      },
+      (geoError) => {
+        const message =
+          geoError.code === geoError.PERMISSION_DENIED
+            ? "Location permission was denied."
+            : "Unable to detect current location.";
+        setLocationHelp(message);
+        setIsLocating(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      },
+    );
   };
 
   if (success) {
@@ -411,12 +509,26 @@ export const CreateRequestPage = () => {
                 error={errors.pincode}
                 required
               />
+              <p className="text-xs text-neutral-500 dark:text-slate-400 md:col-span-2">
+                Enter a pincode from the supported Pune pincode list in the public PDF.
+              </p>
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-neutral-700 dark:text-slate-300">
-                Pick Location on Map
-              </label>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <label className="block text-sm font-medium text-neutral-700 dark:text-slate-300">
+                  Pick Location on Map
+                </label>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleUseCurrentLocation}
+                  loading={isLocating}
+                >
+                  Use Current Location
+                </Button>
+              </div>
               <div
                 ref={mapRef}
                 tabIndex={-1}
@@ -436,15 +548,15 @@ export const CreateRequestPage = () => {
                     attribution='&copy; OpenStreetMap contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
-                  <MapAreaFocus areaName={formData.area} />
+                  <MapAreaFocus areaName={formData.area} coordinates={areaCoordinates} />
                   <MapClickHandler />
-                  {formData.area && AREA_COORDINATES[formData.area] && (
+                  {formData.area && areaCoordinates[formData.area] && (
                     <Circle
                       center={[
-                        AREA_COORDINATES[formData.area].lat,
-                        AREA_COORDINATES[formData.area].lng,
+                        areaCoordinates[formData.area].lat,
+                        areaCoordinates[formData.area].lng,
                       ]}
-                      radius={AREA_COORDINATES[formData.area].radius}
+                      radius={areaCoordinates[formData.area].radius}
                       pathOptions={{
                         color: "#4f46e5",
                         fillColor: "#6366f1",
@@ -468,6 +580,11 @@ export const CreateRequestPage = () => {
                 Click on the map to drop a marker. Latitude and longitude are
                 stored automatically.
               </p>
+              {locationHelp ? (
+                <p className="text-xs text-sky-700 dark:text-sky-300">
+                  {locationHelp}
+                </p>
+              ) : null}
               {(errors.lat || errors.lng) && (
                 <p className="text-xs text-red-600 dark:text-rose-400">
                   Please click the map to set a valid location.

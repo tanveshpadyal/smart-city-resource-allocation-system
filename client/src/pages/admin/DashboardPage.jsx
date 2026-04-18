@@ -2,7 +2,7 @@
  * Admin Dashboard Page
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
@@ -12,6 +12,12 @@ import {
   FileText,
   Timer,
 } from "lucide-react";
+import {
+  MapContainer,
+  Marker,
+  TileLayer,
+  useMapEvents,
+} from "react-leaflet";
 import { AdminLayout } from "../../components/layouts/AdminLayout";
 import { InlineSpinner } from "../../components/common/Spinner";
 import { ErrorAlert, SuccessAlert } from "../../components/common/Alert";
@@ -24,6 +30,29 @@ import useRequest from "../../hooks/useRequest";
 import useRealtimeComplaints from "../../hooks/useRealtimeComplaints";
 import requestService from "../../services/requestService";
 import { formatters } from "../../utils/formatters";
+import L from "leaflet";
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
+
+const DEFAULT_AREA_MAP_CENTER = [18.5204, 73.8567];
+
+const AreaMapClickHandler = ({ onPick }) => {
+  useMapEvents({
+    click(event) {
+      onPick(event.latlng);
+    },
+  });
+
+  return null;
+};
 
 export const AdminDashboardPage = () => {
   const navigate = useNavigate();
@@ -55,7 +84,29 @@ export const AdminDashboardPage = () => {
     longitude: "",
   });
   const [addingArea, setAddingArea] = useState(false);
+  const [removingAreaId, setRemovingAreaId] = useState(null);
   const [areaSuccess, setAreaSuccess] = useState("");
+  const pickedAreaPosition =
+    areaForm.latitude !== "" && areaForm.longitude !== ""
+      ? [Number(areaForm.latitude), Number(areaForm.longitude)]
+      : null;
+
+  const loadCityAreas = useCallback(async () => {
+    setAreasLoading(true);
+    setAreasError("");
+    try {
+      const response = await requestService.getAdminAreas();
+      setCityAreas(response?.data || response || []);
+    } catch (err) {
+      const message =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Failed to load city areas";
+      setAreasError(message);
+    } finally {
+      setAreasLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     getAllRequests();
@@ -128,25 +179,8 @@ export const AdminDashboardPage = () => {
   }, []);
 
   useEffect(() => {
-    const loadCityAreas = async () => {
-      setAreasLoading(true);
-      setAreasError("");
-      try {
-        const response = await requestService.getAdminAreas();
-        setCityAreas(response?.data || response || []);
-      } catch (err) {
-        const message =
-          err.response?.data?.error ||
-          err.response?.data?.message ||
-          "Failed to load city areas";
-        setAreasError(message);
-      } finally {
-        setAreasLoading(false);
-      }
-    };
-
     loadCityAreas();
-  }, []);
+  }, [loadCityAreas]);
 
   useEffect(() => {
     const loadOperatorStats = async () => {
@@ -310,8 +344,7 @@ export const AdminDashboardPage = () => {
       });
       setAreaSuccess("City area added successfully.");
       setAreaForm({ areaName: "", latitude: "", longitude: "" });
-      const areasRes = await requestService.getAdminAreas();
-      setCityAreas(areasRes?.data || areasRes || []);
+      await loadCityAreas();
     } catch (err) {
       const message =
         err.response?.data?.error ||
@@ -321,6 +354,41 @@ export const AdminDashboardPage = () => {
     } finally {
       setAddingArea(false);
     }
+  };
+
+  const handleRemoveArea = async (area) => {
+    const confirmed = window.confirm(
+      `Remove "${area.zone_name}" from City Areas?\n\nThis will hide it from future area selection and remove current operator-area mappings for that area.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setRemovingAreaId(area.id);
+    setAreasError("");
+    setAreaSuccess("");
+    try {
+      await requestService.deleteAdminArea(area.id);
+      setAreaSuccess(`City area "${area.zone_name}" removed successfully.`);
+      await loadCityAreas();
+    } catch (err) {
+      const message =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Failed to remove city area";
+      setAreasError(message);
+    } finally {
+      setRemovingAreaId(null);
+    }
+  };
+
+  const handlePickAreaLocation = ({ lat, lng }) => {
+    setAreaForm((prev) => ({
+      ...prev,
+      latitude: lat.toFixed(6),
+      longitude: lng.toFixed(6),
+    }));
   };
 
   return (
@@ -506,6 +574,32 @@ export const AdminDashboardPage = () => {
             </Button>
           </form>
 
+          <div className="mt-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-neutral-700 dark:text-slate-300">
+                Pick area location on map
+              </p>
+              <p className="text-xs text-neutral-500 dark:text-slate-400">
+                Click map to fill latitude and longitude automatically
+              </p>
+            </div>
+            <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+              <MapContainer
+                center={pickedAreaPosition || DEFAULT_AREA_MAP_CENTER}
+                zoom={12}
+                scrollWheelZoom={false}
+                className="h-64 w-full"
+              >
+                <TileLayer
+                  attribution='&copy; OpenStreetMap contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <AreaMapClickHandler onPick={handlePickAreaLocation} />
+                {pickedAreaPosition ? <Marker position={pickedAreaPosition} /> : null}
+              </MapContainer>
+            </div>
+          </div>
+
           <div className="mt-4">
             {areasLoading ? (
               <InlineSpinner />
@@ -516,12 +610,20 @@ export const AdminDashboardPage = () => {
             ) : (
               <div className="flex flex-wrap gap-2">
                 {cityAreas.map((area) => (
-                  <span
+                  <div
                     key={area.id}
-                    className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                    className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                   >
-                    {area.zone_name}
-                  </span>
+                    <span>{area.zone_name}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveArea(area)}
+                      disabled={removingAreaId === area.id}
+                      className="rounded-full px-2 py-0.5 text-[11px] font-semibold text-rose-600 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-rose-300 dark:hover:bg-rose-500/20"
+                    >
+                      {removingAreaId === area.id ? "Removing..." : "Remove"}
+                    </button>
+                  </div>
                 ))}
               </div>
             )}

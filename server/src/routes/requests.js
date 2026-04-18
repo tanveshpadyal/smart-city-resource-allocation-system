@@ -207,6 +207,13 @@ router.post(
   requestController.createAdminArea,
 );
 
+router.delete(
+  "/admin/areas/:areaId",
+  authenticateToken,
+  authorize(["ADMIN"]),
+  requestController.deleteAdminArea,
+);
+
 /**
  * POST /api/requests/:requestId/assign
  * Assign complaint to operator

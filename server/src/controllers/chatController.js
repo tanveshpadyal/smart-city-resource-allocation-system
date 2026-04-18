@@ -54,7 +54,8 @@ const chat = async (req, res) => {
     });
     return res.status(error.status || 500).json({
       success: false,
-      error: error.message || "Failed to process chat request",
+      error:
+        error.userMessage || error.message || "Failed to process chat request",
       code: error.code || "CHAT_ERROR",
     });
   }

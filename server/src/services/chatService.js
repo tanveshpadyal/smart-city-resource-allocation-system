@@ -69,11 +69,19 @@ const generateChatResponse = async ({ role, context, message }) => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      const error = new Error(
-        errorData.error?.message || `HTTP ${response.status}`,
-      );
-      error.status = response.status;
-      error.code = errorData.error?.code || "OPENROUTER_ERROR";
+      const upstreamMessage =
+        errorData.error?.message || `HTTP ${response.status}`;
+      const error = new Error(upstreamMessage);
+      error.status =
+        response.status === 401 || response.status === 403 ? 502 : response.status;
+      error.code =
+        response.status === 401 || response.status === 403
+          ? "CHAT_PROVIDER_AUTH_ERROR"
+          : errorData.error?.code || "OPENROUTER_ERROR";
+      error.userMessage =
+        response.status === 401 || response.status === 403
+          ? "Chat assistant is temporarily unavailable due to provider configuration."
+          : upstreamMessage;
       throw error;
     }
 

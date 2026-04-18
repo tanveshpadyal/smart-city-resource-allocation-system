@@ -20,6 +20,18 @@ const {
   emitComplaintStatusChanged,
 } = require("../sockets");
 const { Op } = Sequelize;
+const PUNE_DISTRICT_PINCODE_REGEX = /^(411|412)\d{3}$/;
+const SUPPORTED_PUNE_PINCODES = new Set([
+  "411001", "411002", "411003", "411004", "411005", "411006",
+  "411007", "411008", "411009", "411011", "411012", "411013",
+  "411014", "411015", "411016", "411017", "411018", "411019",
+  "411020", "411021", "411022", "411023", "411024", "411025",
+  "411026", "411027", "411028", "411030", "411031", "411032",
+  "411033", "411034", "411035", "411036", "411037", "411038",
+  "411039", "411040", "411041", "411042", "411043", "411044",
+  "411045", "411046", "411047", "411048", "411051", "411052",
+  "411057", "411058", "411060", "411061", "411062", "412101",
+]);
 
 /**
  * CREATE COMPLAINT
@@ -89,6 +101,7 @@ const createRequest = async (req, res) => {
     if (location && typeof location === "object") {
       const lat = Number(location.lat);
       const lng = Number(location.lng);
+      const pincode = String(location.pincode || "").trim();
 
       if (Number.isNaN(lat) || Number.isNaN(lng)) {
         return res.status(400).json({
@@ -98,10 +111,26 @@ const createRequest = async (req, res) => {
         });
       }
 
+      if (!PUNE_DISTRICT_PINCODE_REGEX.test(pincode)) {
+        return res.status(400).json({
+          success: false,
+          error: "Pincode must be a valid Pune district code",
+          code: "INVALID_PINCODE",
+        });
+      }
+
+      if (!SUPPORTED_PUNE_PINCODES.has(pincode)) {
+        return res.status(400).json({
+          success: false,
+          error: "Pincode is not in the supported Pune pincode list",
+          code: "UNSUPPORTED_PINCODE",
+        });
+      }
+
       locationPayload = {
         area: location.area || "",
         address: location.address || "",
-        pincode: location.pincode || "",
+        pincode,
         lat,
         lng,
       };
@@ -1830,30 +1859,14 @@ const createAdminArea = async (req, res) => {
       });
     }
 
-    const existing = await db.Location.findOne({
-      where: {
-        zone_name: { [Op.iLike]: normalizedName },
-      },
-    });
+    const hasLatitude =
+      !(latitude === undefined || latitude === null || latitude === "");
+    const hasLongitude =
+      !(longitude === undefined || longitude === null || longitude === "");
+    const lat = hasLatitude ? Number(latitude) : 18.5204;
+    const lng = hasLongitude ? Number(longitude) : 73.8567;
 
-    if (existing) {
-      return res.status(409).json({
-        success: false,
-        error: "Area already exists",
-        code: "AREA_EXISTS",
-      });
-    }
-
-    const lat =
-      latitude === undefined || latitude === null || latitude === ""
-        ? 18.5204
-        : Number(latitude);
-    const lng =
-      longitude === undefined || longitude === null || longitude === ""
-        ? 73.8567
-        : Number(longitude);
-
-    if (Number.isNaN(lat) || lat < -90 || lat > 90) {
+    if (hasLatitude && (Number.isNaN(lat) || lat < -90 || lat > 90)) {
       return res.status(400).json({
         success: false,
         error: "Invalid latitude",
@@ -1861,11 +1874,44 @@ const createAdminArea = async (req, res) => {
       });
     }
 
-    if (Number.isNaN(lng) || lng < -180 || lng > 180) {
+    if (hasLongitude && (Number.isNaN(lng) || lng < -180 || lng > 180)) {
       return res.status(400).json({
         success: false,
         error: "Invalid longitude",
         code: "INVALID_LONGITUDE",
+      });
+    }
+
+    const existing = await db.Location.findOne({
+      where: {
+        zone_name: { [Op.iLike]: normalizedName },
+      },
+    });
+
+    if (existing) {
+      if (!existing.is_active) {
+        existing.is_active = true;
+        if (hasLatitude) {
+          existing.latitude = lat;
+        }
+        if (hasLongitude) {
+          existing.longitude = lng;
+        }
+        existing.zone_code =
+          existing.zone_code || `AR-${Date.now().toString().slice(-6)}`;
+        await existing.save();
+
+        return res.status(200).json({
+          success: true,
+          message: "City area restored successfully",
+          data: existing,
+        });
+      }
+
+      return res.status(409).json({
+        success: false,
+        error: "Area already exists",
+        code: "AREA_EXISTS",
       });
     }
 
@@ -1888,6 +1934,76 @@ const createAdminArea = async (req, res) => {
       success: false,
       error: "Failed to add city area",
       code: "ADMIN_AREA_CREATE_ERROR",
+    });
+  }
+};
+
+/**
+ * DELETE ADMIN AREA (ADMIN ONLY)
+ * Soft-deactivates a city area and removes its operator mappings
+ */
+const deleteAdminArea = async (req, res) => {
+  const transaction = await db.sequelize.transaction();
+
+  try {
+    const { areaId } = req.params;
+
+    const area = await db.Location.findByPk(areaId, { transaction });
+
+    if (!area || !area.is_active) {
+      await transaction.rollback();
+      return res.status(404).json({
+        success: false,
+        error: "City area not found",
+        code: "AREA_NOT_FOUND",
+      });
+    }
+
+    const normalizedAreaName = String(area.zone_name || "").trim().toLowerCase();
+
+    const operators = await db.User.findAll({
+      where: {
+        role: "OPERATOR",
+      },
+      transaction,
+    });
+
+    for (const operator of operators) {
+      const nextAssignedAreas = (operator.assignedAreas || []).filter(
+        (value) => String(value).trim().toLowerCase() !== normalizedAreaName,
+      );
+
+      if (nextAssignedAreas.length !== (operator.assignedAreas || []).length) {
+        operator.assignedAreas = nextAssignedAreas;
+        await operator.save({ transaction });
+      }
+    }
+
+    await db.ContractorArea.destroy({
+      where: { area_id: area.id },
+      transaction,
+    });
+
+    area.is_active = false;
+    await area.save({ transaction });
+
+    await transaction.commit();
+
+    return res.status(200).json({
+      success: true,
+      message: "City area removed successfully",
+      data: {
+        id: area.id,
+        zone_name: area.zone_name,
+      },
+    });
+  } catch (error) {
+    await transaction.rollback();
+    console.error("Error in deleteAdminArea:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to remove city area",
+      code: "ADMIN_AREA_DELETE_ERROR",
     });
   }
 };
@@ -2026,6 +2142,7 @@ module.exports = {
   getAreaOptions,
   getAdminAreas,
   createAdminArea,
+  deleteAdminArea,
   getContractorWorkloadSummary,
   getUnassignedQueue,
 

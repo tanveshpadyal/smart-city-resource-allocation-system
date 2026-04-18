@@ -1,16 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "../../components/layouts/AdminLayout";
 import { Input } from "../../components/common";
 import { Button } from "../../components/common";
 import { ErrorAlert, SuccessAlert } from "../../components/common/Alert";
 import authService from "../../services/authService";
+import requestService from "../../services/requestService";
 
 export const AddOperatorPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [masterAreas, setMasterAreas] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -25,6 +27,32 @@ export const AddOperatorPage = () => {
       .map((area) => area.trim().toLowerCase())
       .filter(Boolean)
       .filter((area, index, arr) => arr.indexOf(area) === index);
+
+  useEffect(() => {
+    const loadMasterAreas = async () => {
+      try {
+        const response = await requestService.getAdminAreas();
+        setMasterAreas(response?.data || response || []);
+      } catch {
+        setMasterAreas([]);
+      }
+    };
+
+    loadMasterAreas();
+  }, []);
+
+  const toggleAssignedArea = (areaName) => {
+    const normalizedArea = areaName.trim().toLowerCase();
+    const currentAreas = parseAreas(formData.assignedAreas);
+    const nextAreas = currentAreas.includes(normalizedArea)
+      ? currentAreas.filter((area) => area !== normalizedArea)
+      : [...currentAreas, normalizedArea];
+
+    setFormData((prev) => ({
+      ...prev,
+      assignedAreas: nextAreas.join(", "),
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -118,6 +146,35 @@ export const AddOperatorPage = () => {
               }
               placeholder="downtown, north district"
             />
+            {masterAreas.length > 0 ? (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-neutral-700 dark:text-slate-300">
+                  Select from City Areas
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {masterAreas.map((area) => {
+                    const isSelected = parseAreas(formData.assignedAreas).includes(
+                      area.zone_name.trim().toLowerCase(),
+                    );
+
+                    return (
+                      <button
+                        key={area.id}
+                        type="button"
+                        onClick={() => toggleAssignedArea(area.zone_name)}
+                        className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                          isSelected
+                            ? "bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:ring-indigo-500/40"
+                            : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                        }`}
+                      >
+                        {area.zone_name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
             <div className="flex gap-3">
               <Button type="submit" variant="primary" loading={loading}>
                 Create Operator
