@@ -4,6 +4,7 @@ const { DataTypes } = require("sequelize");
 const User = require("./User")(sequelize, DataTypes);
 const Resource = require("./Resource")(sequelize, DataTypes);
 const Request = require("./Request")(sequelize, DataTypes);
+const IssueType = require("./IssueType")(sequelize, DataTypes);
 const ActionLog = require("./ActionLog")(sequelize, DataTypes);
 const AdminActivityLog = require("./AdminActivityLog")(sequelize, DataTypes);
 const Location = require("./Location")(sequelize, DataTypes);
@@ -48,6 +49,14 @@ Location.hasMany(Request);
 
 Request.belongsTo(ProviderService, { foreignKey: "provider_service_id" });
 ProviderService.hasMany(Request, { foreignKey: "provider_service_id" });
+Request.belongsTo(IssueType, {
+  foreignKey: "issue_type_id",
+  as: "issueType",
+});
+IssueType.hasMany(Request, {
+  foreignKey: "issue_type_id",
+  as: "complaints",
+});
 
 // Operator assignment - Request can be assigned to an operator (User)
 Request.belongsTo(User, {
@@ -102,6 +111,7 @@ module.exports = {
   User,
   Resource,
   Request,
+  IssueType,
   ActionLog,
   AdminActivityLog,
   Location,

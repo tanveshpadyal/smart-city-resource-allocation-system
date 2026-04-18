@@ -175,6 +175,12 @@ const routeMeta = [
     subtitle: "View users, update status, and manage contractor coverage.",
   },
   {
+    match: (pathname) => pathname.startsWith("/admin/issue-types"),
+    eyebrow: "Issues",
+    title: "Issue Types",
+    subtitle: "Manage the complaint issue list shown during registration.",
+  },
+  {
     match: (pathname) => pathname.startsWith("/admin/add-operator"),
     eyebrow: "Contractors",
     title: "Add Contractor",

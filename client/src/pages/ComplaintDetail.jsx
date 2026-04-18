@@ -10,6 +10,7 @@ import useAuth from "../hooks/useAuth";
 import useRealtimeComplaints from "../hooks/useRealtimeComplaints";
 import requestService from "../services/requestService";
 import { formatters } from "../utils/formatters";
+import { getComplaintCategoryMeta } from "../utils/complaintCategory";
 
 const timelineConfig = {
   CREATED: {
@@ -134,6 +135,7 @@ export const ComplaintDetail = () => {
 
   const complaint = timelineData.complaint;
   const timeline = Array.isArray(timelineData.timeline) ? timelineData.timeline : [];
+  const categoryMeta = getComplaintCategoryMeta(complaint.complaint_category);
   const isOperator = user?.role === "OPERATOR";
   const isAssigned = complaint.status === "ASSIGNED";
   const isInProgress = complaint.status === "IN_PROGRESS";
@@ -266,7 +268,7 @@ export const ComplaintDetail = () => {
                   Complaint Timeline
                 </h1>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                  {complaint.complaint_category}
+                  {complaint.issue_type_name || categoryMeta.label}
                 </p>
               </div>
               <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">

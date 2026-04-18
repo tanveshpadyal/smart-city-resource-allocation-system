@@ -38,6 +38,12 @@ const ensureDispatchSchema = async () => {
     ADD COLUMN IF NOT EXISTS "parent_complaint_id" UUID,
     ADD COLUMN IF NOT EXISTS "reassignment_cooldown_until" TIMESTAMP WITH TIME ZONE;
   `);
+
+  await sequelize.query(`
+    ALTER TABLE "Requests"
+    ADD COLUMN IF NOT EXISTS "issue_type_id" UUID,
+    ADD COLUMN IF NOT EXISTS "issue_type_name" VARCHAR(255);
+  `);
 };
 
 const connectDB = async () => {
@@ -57,7 +63,7 @@ const connectDB = async () => {
     console.log("Database models synced successfully");
 
     // Seed default services if empty
-    const { Service } = require("../models");
+    const { Service, IssueType } = require("../models");
     const count = await Service.count();
     if (count === 0) {
       await Service.bulkCreate([
@@ -69,6 +75,49 @@ const connectDB = async () => {
         { name: "Equipment", category: "EQUIPMENT", unit_type: "units" },
       ]);
       console.log("Seeded default services");
+    }
+
+    const issueTypeCount = await IssueType.count();
+    if (issueTypeCount === 0) {
+      await IssueType.bulkCreate([
+        {
+          name: "Pothole",
+          slug: "pothole",
+          category: "ROAD",
+          description: "Potholes, broken patches, or unsafe road surfaces.",
+        },
+        {
+          name: "Road Obstruction",
+          slug: "road-obstruction",
+          category: "ROAD",
+          description: "Barricades, debris, or blocked road lanes.",
+        },
+        {
+          name: "Garbage Overflow",
+          slug: "garbage-overflow",
+          category: "GARBAGE",
+          description: "Overflowing waste bins or uncollected garbage.",
+        },
+        {
+          name: "Water Leakage",
+          slug: "water-leakage",
+          category: "WATER",
+          description: "Pipe leaks, waterline breaks, or wastage.",
+        },
+        {
+          name: "Streetlight Not Working",
+          slug: "streetlight-not-working",
+          category: "LIGHT",
+          description: "Streetlight outage, flickering, or unsafe dark spots.",
+        },
+        {
+          name: "Other Civic Issue",
+          slug: "other-civic-issue",
+          category: "OTHER",
+          description: "Issues that do not fit the standard complaint categories.",
+        },
+      ]);
+      console.log("Seeded default issue types");
     }
   } catch (error) {
     console.error("Database connection failed:", error);

@@ -14,6 +14,7 @@ import {
   LogOut,
   Moon,
   Sun,
+  Tags,
   UserPlus,
   Users,
   X,
@@ -56,6 +57,7 @@ export const AdminLayout = ({ children }) => {
   const menuItems = [
     { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
     { label: "Complaints", href: "/admin/pending-complaints", icon: Clock3 },
+    { label: "Issue Types", href: "/admin/issue-types", icon: Tags },
     { label: "Users", href: "/admin/users", icon: Users },
     { label: "Add Contractor", href: "/admin/add-operator", icon: UserPlus },
     { label: "Activity", href: "/admin/activity-logs", icon: Activity },

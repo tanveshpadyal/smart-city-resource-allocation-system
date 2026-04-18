@@ -47,6 +47,7 @@ const createRequest = async (req, res) => {
     const userId = req.user?.userId;
     const {
       complaint_category,
+      issue_type_id,
       priority,
       location_id,
       location,
@@ -55,9 +56,31 @@ const createRequest = async (req, res) => {
       description,
       image,
     } = req.body;
+    const allowedCategories = ["ROAD", "GARBAGE", "WATER", "LIGHT", "OTHER"];
+    let normalizedComplaintCategory = complaint_category;
+    let selectedIssueType = null;
+
+    if (issue_type_id) {
+      selectedIssueType = await db.IssueType.findOne({
+        where: {
+          id: issue_type_id,
+          is_active: true,
+        },
+      });
+
+      if (!selectedIssueType) {
+        return res.status(400).json({
+          success: false,
+          error: "Selected issue type does not exist",
+          code: "INVALID_ISSUE_TYPE",
+        });
+      }
+
+      normalizedComplaintCategory = selectedIssueType.category;
+    }
 
     // ========== INPUT VALIDATION ==========
-    if (!complaint_category) {
+    if (!normalizedComplaintCategory) {
       return res.status(400).json({
         success: false,
         error: "Missing required field: complaint_category",
@@ -66,9 +89,7 @@ const createRequest = async (req, res) => {
     }
 
     if (
-      !["ROAD", "GARBAGE", "WATER", "LIGHT", "OTHER"].includes(
-        complaint_category,
-      )
+      !allowedCategories.includes(normalizedComplaintCategory)
     ) {
       return res.status(400).json({
         success: false,
@@ -195,7 +216,7 @@ const createRequest = async (req, res) => {
 
     const complaintArea = locationPayload?.area || locationRecord?.zone_name || "";
     const locationBucket = computeLocationBucket(
-      complaint_category,
+      normalizedComplaintCategory,
       locationPayload?.lat,
       locationPayload?.lng,
     );
@@ -232,7 +253,9 @@ const createRequest = async (req, res) => {
           user_id: userId,
           location_id: locationRecord?.id || null,
           location_data: locationPayload,
-          complaint_category,
+          complaint_category: normalizedComplaintCategory,
+          issue_type_id: selectedIssueType?.id || null,
+          issue_type_name: selectedIssueType?.name || null,
           priority: normalizedPriority,
           assigned_to: isAutoAssigned ? autoAssignmentResult.operator.id : null,
           description,
@@ -291,7 +314,9 @@ const createRequest = async (req, res) => {
       action: "COMPLAINT_CREATED",
       actor_id: userId,
       metadata: {
-        category: complaint_category,
+        category: normalizedComplaintCategory,
+        issue_type_id: selectedIssueType?.id || null,
+        issue_type_name: selectedIssueType?.name || null,
         location_id: locationRecord?.id || null,
         location: locationPayload,
         auto_assigned: Boolean(autoAssignmentResult?.assigned),
@@ -1550,6 +1575,7 @@ const getComplaintTimeline = async (req, res) => {
           complaint: {
             id: complaint.id,
             complaint_category: complaint.complaint_category,
+            issue_type_name: complaint.issue_type_name,
             priority: complaint.priority,
             description: complaint.description,
             status: complaint.status,
@@ -1672,6 +1698,7 @@ const exportComplaints = async (req, res) => {
 
     const rows = complaints.map((complaint) => ({
       id: complaint.id,
+      issue_type: complaint.issue_type_name || "",
       category: complaint.complaint_category,
       status: complaint.status,
       description: complaint.description || "",
@@ -1692,6 +1719,7 @@ const exportComplaints = async (req, res) => {
 
     const fields = [
       "id",
+      "issue_type",
       "category",
       "status",
       "description",

@@ -29,6 +29,7 @@ import ComplaintDetail from "./pages/ComplaintDetail";
 // Pages - Admin
 import AdminDashboardPage from "./pages/admin/DashboardPage";
 import PendingComplaintsPage from "./pages/admin/PendingComplaintsPage";
+import IssueTypesPage from "./pages/admin/IssueTypesPage";
 import AdminUsersPage from "./pages/admin/UsersPage";
 import ActivityLogsPage from "./pages/admin/ActivityLogsPage";
 import AddOperatorPage from "./pages/admin/AddOperatorPage";
@@ -144,6 +145,14 @@ function App() {
             element={
               <RoleGuard requiredRoles={[config.roles.ADMIN]}>
                 <AdminUsersPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/admin/issue-types"
+            element={
+              <RoleGuard requiredRoles={[config.roles.ADMIN]}>
+                <IssueTypesPage />
               </RoleGuard>
             }
           />

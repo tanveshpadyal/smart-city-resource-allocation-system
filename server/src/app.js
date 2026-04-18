@@ -24,6 +24,7 @@ const providerRoutes = require("./routes/providers");
 const adminLogsRoutes = require("./routes/adminLogs");
 const operatorRoutes = require("./routes/operator");
 const chatRoutes = require("./routes/chat");
+const issueTypeRoutes = require("./routes/issueTypes");
 
 const app = express();
 const server = http.createServer(app);
@@ -102,6 +103,7 @@ app.use("/api/providers", providerRoutes);
 app.use("/api/admin", adminLogsRoutes);
 app.use("/api/operator", operatorRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/issue-types", issueTypeRoutes);
 
 // ============================================
 // 404 HANDLER

@@ -9,6 +9,7 @@ import { Input, Select, Textarea, Button } from "../../components/common";
 import { ErrorAlert, SuccessAlert } from "../../components/common/Alert";
 import useRequest from "../../hooks/useRequest";
 import requestService from "../../services/requestService";
+import issueTypeService from "../../services/issueTypeService";
 import { validators } from "../../utils/validators";
 import {
   MapContainer,
@@ -49,11 +50,13 @@ export const CreateRequestPage = () => {
     "Complaint created successfully! Redirecting...",
   );
   const [availableAreas, setAvailableAreas] = useState([]);
+  const [availableIssueTypes, setAvailableIssueTypes] = useState([]);
   const [areaCoordinates, setAreaCoordinates] = useState(FALLBACK_AREA_COORDINATES);
   const [isLocating, setIsLocating] = useState(false);
   const [locationHelp, setLocationHelp] = useState("");
   const [formData, setFormData] = useState({
     complaint_category: "",
+    issue_type_id: "",
     priority: "MEDIUM",
     description: "",
     area: "",
@@ -65,20 +68,25 @@ export const CreateRequestPage = () => {
   });
   const [errors, setErrors] = useState({});
 
-  const categories = [
-    { value: "ROAD", label: "Road Issue" },
-    { value: "GARBAGE", label: "Garbage/Waste" },
-    { value: "WATER", label: "Water Issue" },
-    { value: "LIGHT", label: "Street Light" },
-    { value: "OTHER", label: "Other" },
-  ];
-
   const priorities = [
     { value: "LOW", label: "Low" },
     { value: "MEDIUM", label: "Medium" },
     { value: "HIGH", label: "High" },
     { value: "EMERGENCY", label: "Emergency" },
   ];
+
+  useEffect(() => {
+    const loadIssueTypes = async () => {
+      try {
+        const response = await issueTypeService.getIssueTypes();
+        setAvailableIssueTypes(response?.data || response || []);
+      } catch {
+        setAvailableIssueTypes([]);
+      }
+    };
+
+    loadIssueTypes();
+  }, []);
 
   useEffect(() => {
     const loadAreas = async () => {
@@ -160,8 +168,8 @@ export const CreateRequestPage = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.complaint_category)
-      newErrors.complaint_category = "Category is required";
+    if (!formData.issue_type_id)
+      newErrors.issue_type_id = "Issue type is required";
     if (!formData.description || formData.description.trim().length === 0)
       newErrors.description = "Description is required";
     if (!formData.area) newErrors.area = "Area is required";
@@ -181,7 +189,7 @@ export const CreateRequestPage = () => {
 
   const focusFirstError = (newErrors) => {
     const order = [
-      "complaint_category",
+      "issue_type_id",
       "description",
       "area",
       "address",
@@ -251,7 +259,7 @@ export const CreateRequestPage = () => {
     if (!isValid) {
       console.log("[CreateRequest] Form validation failed:", errors);
       focusFirstError({
-        complaint_category: !formData.complaint_category,
+        issue_type_id: !formData.issue_type_id,
         description: !formData.description || formData.description.trim().length === 0,
         area: !formData.area,
         address: !formData.address || formData.address.trim().length === 0,
@@ -263,14 +271,13 @@ export const CreateRequestPage = () => {
       return;
     }
 
-    // Double-check category is not empty
-    if (
-      !formData.complaint_category ||
-      formData.complaint_category.trim() === ""
-    ) {
-      const catError = "Please select a complaint category";
-      console.error("[CreateRequest] Category validation failed:", catError);
-      setErrors({ ...errors, complaint_category: catError });
+    if (!formData.issue_type_id) {
+      const issueTypeError = "Please select an issue type";
+      console.error(
+        "[CreateRequest] Issue type validation failed:",
+        issueTypeError,
+      );
+      setErrors({ ...errors, issue_type_id: issueTypeError });
       return;
     }
 
@@ -279,6 +286,7 @@ export const CreateRequestPage = () => {
     try {
       const payload = {
         complaint_category: formData.complaint_category,
+        issue_type_id: formData.issue_type_id || undefined,
         priority: formData.priority,
         description: formData.description,
         location: {
@@ -429,19 +437,40 @@ export const CreateRequestPage = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <Select
-              label="Issue Category"
-              options={categories}
-              value={formData.complaint_category}
+              label="Issue Type"
+              options={availableIssueTypes.map((issueType) => ({
+                value: issueType.id,
+                label: issueType.name,
+              }))}
+              value={formData.issue_type_id}
               onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  complaint_category: e.target.value,
+                setFormData((prev) => {
+                  const selectedIssueType = availableIssueTypes.find(
+                    (item) => item.id === e.target.value,
+                  );
+
+                  return {
+                    ...prev,
+                    issue_type_id: e.target.value,
+                    complaint_category:
+                      selectedIssueType?.category || prev.complaint_category,
+                  };
                 })
               }
-              id="complaint_category"
-              error={errors.complaint_category}
+              id="issue_type_id"
+              error={errors.issue_type_id}
+              placeholder={
+                availableIssueTypes.length > 0
+                  ? "Select the problem type"
+                  : "No issue types available right now"
+              }
+              disabled={availableIssueTypes.length === 0}
               required
             />
+
+            <p className="-mt-3 text-xs text-neutral-500 dark:text-slate-400">
+              Choose the issue directly from the admin-managed list.
+            </p>
 
             <Select
               label="Priority"

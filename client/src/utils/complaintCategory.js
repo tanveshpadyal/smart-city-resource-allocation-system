@@ -37,3 +37,6 @@ const categoryMeta = {
 export const getComplaintCategoryMeta = (category) =>
   categoryMeta[category] || categoryMeta.OTHER;
 
+export const getComplaintDisplayLabel = (complaint) =>
+  complaint?.issue_type_name?.trim() ||
+  getComplaintCategoryMeta(complaint?.complaint_category).label;

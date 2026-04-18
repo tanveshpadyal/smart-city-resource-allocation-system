@@ -16,11 +16,11 @@ Think of it like a **"Swachh Bharat" or municipal complaint app**, but built fro
 
 Our system has **three types of users**, each with a different dashboard and set of permissions:
 
-| Role | Who Are They? | What Can They Do? |
-|------|--------------|-------------------|
-| **Citizen** | A regular city resident | Register, log in, file a complaint with category + description + location + photo, and track its status |
-| **Admin** | A city official / supervisor | View all complaints, see analytics & charts, assign complaints to operators, manage users & service areas |
-| **Operator** | A field worker (e.g., road repair crew) | See only complaints assigned to them, mark "work started", mark "resolved" with a remark when done |
+| Role         | Who Are They?                           | What Can They Do?                                                                                         |
+| ------------ | --------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| **Citizen**  | A regular city resident                 | Register, log in, file a complaint with category + description + location + photo, and track its status   |
+| **Admin**    | A city official / supervisor            | View all complaints, see analytics & charts, assign complaints to operators, manage users & service areas |
+| **Operator** | A field worker (e.g., road repair crew) | See only complaints assigned to them, mark "work started", mark "resolved" with a remark when done        |
 
 > **Key point for the examiner:** Every user sees a **different dashboard** based on their role. A citizen cannot access admin pages, and an operator cannot see all city complaints — this is **role-based access control**.
 
@@ -56,11 +56,11 @@ This is the **core workflow** of our project. Every complaint moves through exac
 
 ### A Real Example:
 
-1. **Citizen Ramesh** logs in and creates a complaint: *"There is a big pothole on MG Road near the park"* — selects category **ROAD**, drops a pin on the map, uploads a photo.
+1. **Citizen Ramesh** logs in and creates a complaint: _"There is a big pothole on MG Road near the park"_ — selects category **ROAD**, drops a pin on the map, uploads a photo.
 2. Complaint is saved as **PENDING**.
 3. **Admin Priya** opens her dashboard, sees the pending complaint, and assigns it to **Operator Suresh** who handles that area.
 4. **Operator Suresh** sees the complaint in his dashboard, clicks **"Start Work"** — status becomes **IN_PROGRESS**.
-5. Suresh fixes the pothole, then clicks **"Resolve"** and types: *"Pothole filled with asphalt. Road is safe now."*
+5. Suresh fixes the pothole, then clicks **"Resolve"** and types: _"Pothole filled with asphalt. Road is safe now."_
 6. **Citizen Ramesh** checks his complaints list — sees status = **RESOLVED**, operator name = Suresh, and the remark.
 
 > **Why is this important?** This gives full **transparency and accountability**. Every action is timestamped — when was it filed, when was it assigned, when did work start, when was it resolved.
@@ -99,21 +99,21 @@ Our system uses a **client-server architecture** (also called a 3-tier architect
 
 ### Technology Justification Table (Examiner-Friendly):
 
-| Technology | Why We Used It |
-|-----------|---------------|
-| **React** | Component-based UI, fast rendering with Virtual DOM, huge ecosystem |
-| **Vite** | Blazing-fast development server, modern build tool (much faster than Webpack) |
-| **Node.js + Express** | JavaScript on server-side, non-blocking I/O, great for API servers |
-| **PostgreSQL** | Reliable relational database, supports complex queries, ACID-compliant |
-| **Sequelize ORM** | Lets us write database queries in JavaScript instead of raw SQL, handles migrations |
-| **JWT (JSON Web Tokens)** | Stateless authentication — no need to store sessions on the server |
-| **Socket.IO** | Real-time updates — when a complaint status changes, the UI updates instantly |
-| **Axios** | HTTP client for making API calls from frontend to backend |
-| **Zustand** | Lightweight state management for React (simpler alternative to Redux) |
-| **Leaflet** | Interactive maps — citizens can pin complaint locations on a map |
-| **Recharts** | Beautiful charts and graphs on the admin analytics dashboard |
-| **bcryptjs** | Secure password hashing (passwords are never stored in plain text) |
-| **Docker** | Containerization for easy deployment and database setup |
+| Technology                | Why We Used It                                                                      |
+| ------------------------- | ----------------------------------------------------------------------------------- |
+| **React**                 | Component-based UI, fast rendering with Virtual DOM, huge ecosystem                 |
+| **Vite**                  | Blazing-fast development server, modern build tool (much faster than Webpack)       |
+| **Node.js + Express**     | JavaScript on server-side, non-blocking I/O, great for API servers                  |
+| **PostgreSQL**            | Reliable relational database, supports complex queries, ACID-compliant              |
+| **Sequelize ORM**         | Lets us write database queries in JavaScript instead of raw SQL, handles migrations |
+| **JWT (JSON Web Tokens)** | Stateless authentication — no need to store sessions on the server                  |
+| **Socket.IO**             | Real-time updates — when a complaint status changes, the UI updates instantly       |
+| **Axios**                 | HTTP client for making API calls from frontend to backend                           |
+| **Zustand**               | Lightweight state management for React (simpler alternative to Redux)               |
+| **Leaflet**               | Interactive maps — citizens can pin complaint locations on a map                    |
+| **Recharts**              | Beautiful charts and graphs on the admin analytics dashboard                        |
+| **bcryptjs**              | Secure password hashing (passwords are never stored in plain text)                  |
+| **Docker**                | Containerization for easy deployment and database setup                             |
 
 ---
 
@@ -130,6 +130,7 @@ We use **JWT (JSON Web Token)** based authentication:
 5. After verifying the token, another middleware checks the user's **role** → if a citizen tries to access an admin route → 403 Forbidden.
 
 ### Additional Security Features:
+
 - **Password hashing** with bcrypt (12 rounds)
 - **Strong password policy** (min 8 chars, uppercase, lowercase, number, special char)
 - **Rate limiting** on login (max 5 failed attempts per 15 minutes per IP+email)
@@ -188,22 +189,23 @@ erDiagram
 
 The Admin dashboard is the most feature-rich part of the system:
 
-| Feature | What It Shows |
-|---------|-------------|
-| **KPI Cards** | Total complaints, resolved %, pending %, in-progress count |
-| **Category Trends** | Bar/pie charts showing complaints by category (Road, Garbage, Water, etc.) |
-| **Status Distribution** | How many complaints are in each status |
-| **Heatmap** | Geographic map showing complaint hotspot areas |
-| **Operator Performance** | Which operators are resolving fastest, who has the most workload |
-| **Overdue Complaints** | Complaints that haven't been resolved within the expected time |
-| **Data Export** | Download complaint data as CSV for reporting |
-| **Activity Logs** | Full audit trail of all admin actions |
+| Feature                  | What It Shows                                                              |
+| ------------------------ | -------------------------------------------------------------------------- |
+| **KPI Cards**            | Total complaints, resolved %, pending %, in-progress count                 |
+| **Category Trends**      | Bar/pie charts showing complaints by category (Road, Garbage, Water, etc.) |
+| **Status Distribution**  | How many complaints are in each status                                     |
+| **Heatmap**              | Geographic map showing complaint hotspot areas                             |
+| **Operator Performance** | Which operators are resolving fastest, who has the most workload           |
+| **Overdue Complaints**   | Complaints that haven't been resolved within the expected time             |
+| **Data Export**          | Download complaint data as CSV for reporting                               |
+| **Activity Logs**        | Full audit trail of all admin actions                                      |
 
 ---
 
 ## 🤖 "What About AI?" — AI Chat Assistant
 
 The system includes an **AI-powered chat assistant** accessible to all authenticated users. It is role-aware, meaning it understands who is asking and provides relevant help:
+
 - Citizens can ask about complaint status or how to file complaints
 - Admins can ask for analytics insights
 - Operators can ask about their assigned work
@@ -216,35 +218,35 @@ This uses the **OpenAI API** on the backend.
 
 Our backend exposes a RESTful API. Here are the key endpoint groups:
 
-| Endpoint Group | Example Route | Purpose |
-|---------------|--------------|---------|
-| **Auth** | `POST /api/auth/login` | Login, register, Google auth, password reset |
-| **Citizen Complaints** | `POST /api/requests` | Create complaint, view my complaints |
-| **Admin Management** | `GET /api/requests/admin/all` | View all complaints, assign operators, analytics |
-| **Operator Workflow** | `POST /api/requests/:id/resolve` | Start work, resolve complaints |
-| **Providers** | `GET /api/providers/services` | Operator service profiles |
-| **Resource Allocation** | `POST /api/allocations/auto/:id` | Auto/manual resource dispatch (future module) |
+| Endpoint Group          | Example Route                    | Purpose                                          |
+| ----------------------- | -------------------------------- | ------------------------------------------------ |
+| **Auth**                | `POST /api/auth/login`           | Login, register, Google auth, password reset     |
+| **Citizen Complaints**  | `POST /api/requests`             | Create complaint, view my complaints             |
+| **Admin Management**    | `GET /api/requests/admin/all`    | View all complaints, assign operators, analytics |
+| **Operator Workflow**   | `POST /api/requests/:id/resolve` | Start work, resolve complaints                   |
+| **Providers**           | `GET /api/providers/services`    | Operator service profiles                        |
+| **Resource Allocation** | `POST /api/allocations/auto/:id` | Auto/manual resource dispatch (future module)    |
 
 ---
 
 ## 📱 "What Pages Does The Frontend Have?"
 
-| Page | Route | Who Sees It |
-|------|-------|------------|
-| Landing Page | `/` | Everyone |
-| Login / Register | `/login`, `/register` | Public |
-| Citizen Dashboard | `/citizen/dashboard` | Citizen |
-| Create Complaint | `/citizen/create-request` | Citizen |
-| My Complaints | `/citizen/my-requests` | Citizen |
-| Complaint Detail | `/complaints/:id` | All (role-filtered) |
-| Admin Dashboard | `/admin/dashboard` | Admin |
-| Pending Complaints | `/admin/pending-complaints` | Admin |
-| Users Management | `/admin/users` | Admin |
-| Add Operator | `/admin/add-operator` | Admin |
-| Activity Logs | `/admin/activity-logs` | Admin |
-| Operator Dashboard | `/operator/dashboard` | Operator |
-| Operator Complaints | `/operator/complaints` | Operator |
-| Operator Profile | `/operator/profile` | Operator |
+| Page                | Route                       | Who Sees It         |
+| ------------------- | --------------------------- | ------------------- |
+| Landing Page        | `/`                         | Everyone            |
+| Login / Register    | `/login`, `/register`       | Public              |
+| Citizen Dashboard   | `/citizen/dashboard`        | Citizen             |
+| Create Complaint    | `/citizen/create-request`   | Citizen             |
+| My Complaints       | `/citizen/my-requests`      | Citizen             |
+| Complaint Detail    | `/complaints/:id`           | All (role-filtered) |
+| Admin Dashboard     | `/admin/dashboard`          | Admin               |
+| Pending Complaints  | `/admin/pending-complaints` | Admin               |
+| Users Management    | `/admin/users`              | Admin               |
+| Add Operator        | `/admin/add-operator`       | Admin               |
+| Activity Logs       | `/admin/activity-logs`      | Admin               |
+| Operator Dashboard  | `/operator/dashboard`       | Operator            |
+| Operator Complaints | `/operator/complaints`      | Operator            |
+| Operator Profile    | `/operator/profile`         | Operator            |
 
 > All routes are **protected** — if you're not logged in, you're redirected to login. If you don't have the right role, you see an "Unauthorized" page.
 
@@ -267,31 +269,31 @@ Our backend exposes a RESTful API. Here are the key endpoint groups:
 
 ## 🔮 "What Are the Future Enhancements?"
 
-| Enhancement | Description |
-|------------|-------------|
-| Auto-Assignment | ML-based operator assignment using workload, proximity, and priority |
-| Mobile App | React Native app for citizens and operators |
-| Citizen Feedback | Rating system after complaint resolution |
-| SMS/Push Notifications | Alerts when complaint status changes |
-| Predictive Analytics | Forecast complaint hotspots by season/area |
-| Multilingual UI | Hindi, Marathi, and other regional languages |
-| SLA Escalation | Auto-escalate unresolved complaints to senior admins |
+| Enhancement            | Description                                                          |
+| ---------------------- | -------------------------------------------------------------------- |
+| Auto-Assignment        | ML-based operator assignment using workload, proximity, and priority |
+| Mobile App             | React Native app for citizens and operators                          |
+| Citizen Feedback       | Rating system after complaint resolution                             |
+| SMS/Push Notifications | Alerts when complaint status changes                                 |
+| Predictive Analytics   | Forecast complaint hotspots by season/area                           |
+| Multilingual UI        | Hindi, Marathi, and other regional languages                         |
+| SLA Escalation         | Auto-escalate unresolved complaints to senior admins                 |
 
 ---
 
 ## 📝 Quick Viva Q&A Cheat Sheet
 
-| Question | Answer |
-|----------|--------|
-| *What architecture does your project use?* | 3-tier client-server architecture (React frontend → Express API → PostgreSQL database) |
-| *Why JWT instead of sessions?* | JWT is stateless — the server doesn't need to store session data, making it more scalable |
-| *How do you prevent SQL injection?* | We use Sequelize ORM which uses parameterized queries — user input never directly touches SQL |
-| *How are passwords stored?* | Hashed using bcrypt with 12 salt rounds — we never store plain-text passwords |
-| *What is the primary key type?* | UUID (v4) — more secure than auto-increment because IDs are not guessable |
-| *How do you handle authorization?* | Middleware checks JWT token for authentication, then checks user role for authorization |
-| *What happens if the access token expires?* | The client automatically uses the refresh token to get a new access token without forcing re-login |
-| *What design pattern does the backend follow?* | MVC (Model-View-Controller) — Models (Sequelize), Controllers (business logic), Routes (endpoints) |
-| *What is Socket.IO used for?* | Real-time complaint status updates — when an operator resolves a complaint, the citizen's page updates live |
-| *How is the frontend state managed?* | Using Zustand — a lightweight state management library (simpler than Redux) |
-| *What complaint categories are supported?* | ROAD, GARBAGE, WATER, LIGHT, OTHER |
-| *What are the 4 complaint statuses?* | PENDING → ASSIGNED → IN_PROGRESS → RESOLVED |
+| Question                                       | Answer                                                                                                      |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| _What architecture does your project use?_     | 3-tier client-server architecture (React frontend → Express API → PostgreSQL database)                      |
+| _Why JWT instead of sessions?_                 | JWT is stateless — the server doesn't need to store session data, making it more scalable                   |
+| _How do you prevent SQL injection?_            | We use Sequelize ORM which uses parameterized queries — user input never directly touches SQL               |
+| _How are passwords stored?_                    | Hashed using bcrypt with 12 salt rounds — we never store plain-text passwords                               |
+| _What is the primary key type?_                | UUID (v4) — more secure than auto-increment because IDs are not guessable                                   |
+| _How do you handle authorization?_             | Middleware checks JWT token for authentication, then checks user role for authorization                     |
+| _What happens if the access token expires?_    | The client automatically uses the refresh token to get a new access token without forcing re-login          |
+| _What design pattern does the backend follow?_ | MVC (Model-View-Controller) — Models (Sequelize), Controllers (business logic), Routes (endpoints)          |
+| _What is Socket.IO used for?_                  | Real-time complaint status updates — when an operator resolves a complaint, the citizen's page updates live |
+| _How is the frontend state managed?_           | Using Zustand — a lightweight state management library (simpler than Redux)                                 |
+| _What complaint categories are supported?_     | ROAD, GARBAGE, WATER, LIGHT, OTHER                                                                          |
+| _What are the 4 complaint statuses?_           | PENDING → ASSIGNED → IN_PROGRESS → RESOLVED                                                                 |

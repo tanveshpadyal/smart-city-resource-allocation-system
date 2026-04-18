@@ -31,6 +31,14 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.ENUM("ROAD", "GARBAGE", "WATER", "LIGHT", "OTHER"),
         allowNull: false,
       },
+      issue_type_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
+      },
+      issue_type_name: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       assigned_to: {
         type: DataTypes.UUID,
         allowNull: true,
@@ -131,6 +139,7 @@ module.exports = (sequelize, DataTypes) => {
         { fields: ["assigned_to"] },
         { fields: ["assignment_strategy"] },
         { fields: ["location_bucket"] },
+        { fields: ["issue_type_id"] },
         { fields: ["parent_complaint_id"] },
         { fields: ["status"] },
         { fields: ["slaBreached"] },

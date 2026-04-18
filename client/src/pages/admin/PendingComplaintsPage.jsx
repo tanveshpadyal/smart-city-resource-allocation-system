@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, RefreshCw } from "lucide-react";
 import { AdminLayout } from "../../components/layouts/AdminLayout";
 import { InlineSpinner } from "../../components/common/Spinner";
 import { ErrorAlert, SuccessAlert } from "../../components/common/Alert";
@@ -11,7 +11,10 @@ import requestService from "../../services/requestService";
 import authService from "../../services/authService";
 import useRealtimeComplaints from "../../hooks/useRealtimeComplaints";
 import { formatters } from "../../utils/formatters";
-import { getComplaintCategoryMeta } from "../../utils/complaintCategory";
+import {
+  getComplaintCategoryMeta,
+  getComplaintDisplayLabel,
+} from "../../utils/complaintCategory";
 
 const DEFAULT_LIMIT = 50;
 const FILTERED_LIMIT = 500;
@@ -64,6 +67,7 @@ const applyLocalFilters = (items, filters) => {
       const haystack = [
         complaint.description,
         complaint.complaint_category,
+        complaint.issue_type_name,
         complaint.User?.name,
         complaint.assignedOperator?.name,
         complaint.location_data?.area,
@@ -327,7 +331,17 @@ export const PendingComplaintsPage = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex justify-end">
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={loadComplaints}
+            loading={loading}
+            className="inline-flex items-center gap-2"
+          >
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+            Refresh
+          </Button>
           <Button variant="secondary" size="sm" onClick={handleExport} loading={exporting}>
             Export as CSV
           </Button>
@@ -452,7 +466,7 @@ export const PendingComplaintsPage = () => {
                       <div className="flex-1">
                         <p className="flex items-center gap-2 text-sm font-semibold text-neutral-900 dark:text-slate-200">
                           <CategoryIcon size={15} className={categoryMeta.iconClass} />
-                          {categoryMeta.label}
+                          {getComplaintDisplayLabel(complaint)}
                         </p>
                         <p className="mt-1 text-sm text-neutral-700 dark:text-slate-300">
                           {complaint.description}

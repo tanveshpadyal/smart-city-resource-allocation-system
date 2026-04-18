@@ -8,7 +8,10 @@ import useRequest from "../../hooks/useRequest";
 import useAuth from "../../hooks/useAuth";
 import useRealtimeComplaints from "../../hooks/useRealtimeComplaints";
 import { formatters } from "../../utils/formatters";
-import { getComplaintCategoryMeta } from "../../utils/complaintCategory";
+import {
+  getComplaintCategoryMeta,
+  getComplaintDisplayLabel,
+} from "../../utils/complaintCategory";
 
 export const MyRequestsPage = () => {
   const navigate = useNavigate();
@@ -42,7 +45,11 @@ export const MyRequestsPage = () => {
 
       if (filters.search.trim()) {
         const searchLower = filters.search.toLowerCase();
-        const haystack = [complaint.complaint_category, complaint.description]
+        const haystack = [
+          complaint.complaint_category,
+          complaint.issue_type_name,
+          complaint.description,
+        ]
           .filter(Boolean)
           .join(" ")
           .toLowerCase();
@@ -173,7 +180,7 @@ export const MyRequestsPage = () => {
                         <div className="mb-1 flex items-center gap-2">
                           <h3 className="flex items-center gap-2 font-semibold text-neutral-900 dark:text-slate-200">
                             <CategoryIcon size={15} className={categoryMeta.iconClass} />
-                            {categoryMeta.label}
+                            {getComplaintDisplayLabel(complaint)}
                           </h3>
                           <span
                             className={`rounded px-2 py-1 text-xs font-medium ${getStatusColor(

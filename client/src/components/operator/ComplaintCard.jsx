@@ -1,7 +1,10 @@
 import { Clock3, MapPin, ArrowRight, CheckCircle2, PlayCircle } from "lucide-react";
 import { Button } from "../common";
 import { formatters } from "../../utils/formatters";
-import { getComplaintCategoryMeta } from "../../utils/complaintCategory";
+import {
+  getComplaintCategoryMeta,
+  getComplaintDisplayLabel,
+} from "../../utils/complaintCategory";
 
 const statusStyles = {
   ASSIGNED: "bg-blue-100 text-blue-700 dark:bg-indigo-500/20 dark:text-indigo-300",
@@ -34,7 +37,7 @@ const ComplaintCard = ({
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">
             <CategoryIcon size={13} className={categoryMeta.iconClass} />
-            {categoryMeta.label}
+            {getComplaintDisplayLabel(complaint)}
           </span>
           <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass}`}>
             {complaint.status.replace("_", " ")}
