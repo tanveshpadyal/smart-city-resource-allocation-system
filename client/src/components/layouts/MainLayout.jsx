@@ -6,6 +6,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import AppFooter from "./AppFooter";
+import cityView from "../../assets/city-view.png";
 
 export const MainLayout = ({ children }) => {
   const location = useLocation();
@@ -48,7 +49,7 @@ export const MainLayout = ({ children }) => {
                 to="/register"
                 className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
                   location.pathname === "/register"
-                    ? "bg-emerald-700 text-white"
+                    ? "bg-indigo-700 text-white"
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900"
                 }`}
               >
@@ -59,8 +60,17 @@ export const MainLayout = ({ children }) => {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {children}
+      <main className="relative overflow-hidden">
+        <img
+          src={cityView}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(248,250,252,0.9)_0%,rgba(219,234,254,0.18)_24%,rgba(241,245,249,0.86)_52%,rgba(248,250,252,0.94)_100%)] dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.88)_0%,rgba(30,58,138,0.14)_28%,rgba(2,6,23,0.9)_55%,rgba(2,6,23,0.94)_100%)]" />
+        <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          {children}
+        </div>
       </main>
 
       <AppFooter />

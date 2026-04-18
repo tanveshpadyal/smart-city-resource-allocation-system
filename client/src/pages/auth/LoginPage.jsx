@@ -6,11 +6,11 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { ShieldCheck } from "lucide-react";
 import MainLayout from "../../components/layouts/MainLayout";
+import AuthShowcasePanel from "../../components/auth/AuthShowcasePanel";
 import { Input, Button } from "../../components/common";
 import { ErrorAlert } from "../../components/common/Alert";
 import useAuth from "../../hooks/useAuth";
 import { validators } from "../../utils/validators";
-import authIllustration from "../../assets/login/login.png";
 
 export const LoginPage = () => {
   const navigate = useNavigate();
@@ -108,19 +108,11 @@ export const LoginPage = () => {
 
   return (
     <MainLayout>
-      <div className="mx-auto grid w-full max-w-4xl items-center overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-200/70 md:grid-cols-2 dark:border-slate-800 dark:bg-[#020617] dark:shadow-black/40">
-        {/* Illustration Section */}
-        <div className="hidden  md:flex items-center justify-center p-4">
-          <img
-            src={authIllustration}
-            alt="Smart city complaint and contractor management illustration"
-            className="max-h-[550px] w-full object-contain"
-          />
-        </div>
+      <div className="mx-auto grid w-full max-w-5xl overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-xl shadow-slate-200/70 md:grid-cols-[1.04fr_0.96fr] dark:border-slate-800 dark:bg-[#020617] dark:shadow-black/40">
+        <AuthShowcasePanel />
 
-        {/* Login Form */}
-        <div className="flex items-center justify-center p-4">
-          <div className="w-full max-w-[380px] bg-white p-4 dark:bg-slate-900">
+        <div className="flex items-center justify-center p-4 sm:p-6">
+          <div className="w-full max-w-[400px] bg-white/95 p-4 dark:bg-slate-900/90 sm:p-5">
             {/* Header */}
             <div className="mb-4 flex items-center gap-3">
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
